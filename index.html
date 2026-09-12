@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -25,6 +24,33 @@
     touch-action: none;
   }
 
+  /*
+    =========================
+    アプリ全体を -90° 回転
+    =========================
+
+    内部では「縦画面」として描画し、
+    それを物理画面上で -90° 回転させる。
+  */
+
+  #app {
+    position: fixed;
+
+    width: 100vh;
+    height: 100vw;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+      translate(-50%, -50%)
+      rotate(-90deg);
+
+    transform-origin: center center;
+
+    overflow: hidden;
+  }
+
   canvas {
     display: block;
     width: 100%;
@@ -33,13 +59,16 @@
   }
 
   #dateBox {
-    position: fixed;
+    position: absolute;
     top: 10px;
     left: 10px;
     z-index: 10;
+
     background: rgba(255,255,255,0.92);
+
     padding: 6px 8px;
     border-radius: 8px;
+
     font-size: 14px;
   }
 
@@ -48,10 +77,11 @@
   }
 
   #buttons {
-    position: fixed;
+    position: absolute;
     top: 10px;
     right: 10px;
     z-index: 10;
+
     display: flex;
     gap: 5px;
   }
@@ -60,8 +90,11 @@
   #selectionBar button {
     border: none;
     border-radius: 8px;
+
     background: rgba(255,255,255,0.94);
+
     padding: 7px 10px;
+
     font-size: 14px;
   }
 
@@ -71,25 +104,38 @@
   }
 
   #selectionInfo {
-    position: fixed;
+    position: absolute;
+
     bottom: 58px;
     left: 50%;
+
     transform: translateX(-50%);
+
     z-index: 10;
+
     background: rgba(255,255,255,0.94);
+
     border-radius: 8px;
+
     padding: 5px 10px;
+
     font-size: 14px;
+
     display: none;
   }
 
   #selectionBar {
-    position: fixed;
+    position: absolute;
+
     bottom: 10px;
     left: 50%;
+
     transform: translateX(-50%);
+
     z-index: 10;
+
     display: none;
+
     gap: 6px;
   }
 
@@ -99,66 +145,96 @@
   ========================= */
 
   #editModal {
-    position: fixed;
+    position: absolute;
+
     inset: 0;
+
     z-index: 30;
+
     display: none;
+
     align-items: center;
     justify-content: center;
+
     background: rgba(0,0,0,0.35);
   }
 
   #editPanel {
-    width: min(360px, calc(100vw - 32px));
+    width: min(360px, calc(100% - 32px));
+
     background: white;
+
     border-radius: 14px;
+
     padding: 18px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+
+    box-shadow:
+      0 8px 30px rgba(0,0,0,0.25);
   }
 
   #editPanel h2 {
     margin: 0 0 16px;
+
     font-size: 18px;
   }
 
   .editLabel {
     display: block;
+
     margin-bottom: 6px;
+
     font-size: 13px;
+
     color: #555;
   }
 
   #editNumber {
     width: 100%;
     height: 42px;
+
     border: 1px solid #ccc;
+
     border-radius: 8px;
+
     padding: 6px 10px;
+
     font-size: 16px;
   }
 
   #editComment {
     width: 100%;
     height: 90px;
+
     resize: none;
+
     border: 1px solid #ccc;
+
     border-radius: 8px;
+
     padding: 8px 10px;
+
     font-size: 15px;
+
     font-family: sans-serif;
   }
 
   #editButtons {
     display: flex;
+
     gap: 7px;
+
     margin-top: 14px;
   }
 
   #editButtons button {
     flex: 1;
+
     border: none;
+
     border-radius: 8px;
+
     padding: 9px 6px;
+
     font-size: 14px;
   }
 
@@ -185,63 +261,90 @@
 
 <body>
 
-<canvas id="canvas"></canvas>
+<div id="app">
 
-<div id="dateBox">
-  <input type="date" id="date">
-</div>
+  <canvas id="canvas"></canvas>
 
-<div id="buttons">
-  <button id="reset">リセット</button>
-  <button id="select">選択</button>
-  <button id="minus">−</button>
-  <button id="plus">＋</button>
-</div>
+  <div id="dateBox">
+    <input type="date" id="date">
+  </div>
 
-<div id="selectionInfo">0本選択中</div>
+  <div id="buttons">
+    <button id="reset">リセット</button>
+    <button id="select">選択</button>
+    <button id="minus">−</button>
+    <button id="plus">＋</button>
+  </div>
 
-<div id="selectionBar">
-  <button id="deleteSelected">選択削除</button>
-  <button id="cancelSelect">終了</button>
-</div>
+  <div id="selectionInfo">
+    0本選択中
+  </div>
+
+  <div id="selectionBar">
+    <button id="deleteSelected">
+      選択削除
+    </button>
+
+    <button id="cancelSelect">
+      終了
+    </button>
+  </div>
 
 
-<!-- =========================
-     矢の編集画面
-========================= -->
+  <!-- =========================
+       矢の編集画面
+  ========================= -->
 
-<div id="editModal">
+  <div id="editModal">
 
-  <div id="editPanel">
+    <div id="editPanel">
 
-    <h2>矢の記録を編集</h2>
+      <h2>矢の記録を編集</h2>
 
-    <label class="editLabel" for="editNumber">
-      何本目？
-    </label>
+      <label
+        class="editLabel"
+        for="editNumber"
+      >
+        何本目？
+      </label>
 
-    <input
-      id="editNumber"
-      type="number"
-      min="1"
-      step="1"
-    >
+      <input
+        id="editNumber"
+        type="number"
+        min="1"
+        step="1"
+      >
 
-    <br><br>
+      <br><br>
 
-    <label class="editLabel" for="editComment">
-      コメント
-    </label>
+      <label
+        class="editLabel"
+        for="editComment"
+      >
+        コメント
+      </label>
 
-    <textarea
-      id="editComment"
-      placeholder="コメントを入力"
-    ></textarea>
+      <textarea
+        id="editComment"
+        placeholder="コメントを入力"
+      ></textarea>
 
-    <div id="editButtons">
-      <button id="editDelete">削除</button>
-      <button id="editCancel">キャンセル</button>
-      <button id="editSave">保存</button>
+      <div id="editButtons">
+
+        <button id="editDelete">
+          削除
+        </button>
+
+        <button id="editCancel">
+          キャンセル
+        </button>
+
+        <button id="editSave">
+          保存
+        </button>
+
+      </div>
+
     </div>
 
   </div>
@@ -251,18 +354,32 @@
 
 <script>
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const canvas =
+  document.getElementById("canvas");
 
-const dateInput = document.getElementById("date");
+const ctx =
+  canvas.getContext("2d");
 
-const resetButton = document.getElementById("reset");
-const selectButton = document.getElementById("select");
-const minusButton = document.getElementById("minus");
-const plusButton = document.getElementById("plus");
+const dateInput =
+  document.getElementById("date");
 
-const selectionInfo = document.getElementById("selectionInfo");
-const selectionBar = document.getElementById("selectionBar");
+const resetButton =
+  document.getElementById("reset");
+
+const selectButton =
+  document.getElementById("select");
+
+const minusButton =
+  document.getElementById("minus");
+
+const plusButton =
+  document.getElementById("plus");
+
+const selectionInfo =
+  document.getElementById("selectionInfo");
+
+const selectionBar =
+  document.getElementById("selectionBar");
 
 const deleteSelectedButton =
   document.getElementById("deleteSelected");
@@ -301,16 +418,23 @@ let editingShot = null;
 ========================= */
 
 const TARGET_SPACING = 1800;
+
 const TARGET_DIAMETER = 360;
+
 const TARGET_RADIUS = 180;
 
 const GROUND_Y = 270;
+
 const CURTAIN_Y = -900;
+
 const AZUCHI_TOP = -330;
 
 const RECORD_TOP = -1200;
+
 const RECORD_BOTTOM = 600;
+
 const RECORD_LEFT = -1800;
+
 const RECORD_RIGHT = 1800;
 
 
@@ -319,16 +443,6 @@ const RECORD_RIGHT = 1800;
 ========================= */
 
 const SHOT_RADIUS = 9;
-
-
-/*
-  同じ半径9pxの円について、
-  「円の面積が約80%以上重なっている」
-  とみなす中心間距離。
-
-  約5.4px以下なら
-  重なった矢として扱う。
-*/
 
 const OVERLAP_RADIUS = 5.4;
 
@@ -356,16 +470,31 @@ const shotColors = [
 let scale = 1;
 
 const MIN_SCALE = 0.4;
+
 const MAX_SCALE = 4;
 
 
 /*
-  横画面専用。
+  内部座標は「縦画面」。
 
-  0にすることで、
-  3つの的の中心を画面中央の高さに配置する。
+  つまり、
 
-  描画倍率には一切影響しない。
+      上
+      ↑
+  右的
+  中央的
+  左的
+      ↓
+      下
+
+  という配置にしてから、
+  アプリ全体を -90° 回転する。
+
+  その結果、実際のiPhoneでは
+
+  左的 ─ 中央的 ─ 右的
+
+  になる。
 */
 
 let centerY = 0;
@@ -378,12 +507,15 @@ let centerY = 0;
 let shots = [];
 
 let selectionMode = false;
+
 let selectedShots = new Set();
 
 let selectionCycle = [];
+
 let selectionCycleIndex = 0;
 
 let lastSelectionX = null;
+
 let lastSelectionY = null;
 
 
@@ -392,6 +524,7 @@ let lastSelectionY = null;
 ========================= */
 
 let pinchStartDistance = null;
+
 let pinchStartScale = 1;
 
 let isPinching = false;
@@ -405,14 +538,23 @@ function getTodayString() {
 
   const d = new Date();
 
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const y =
+    d.getFullYear();
+
+  const m =
+    String(d.getMonth() + 1)
+      .padStart(2, "0");
+
+  const day =
+    String(d.getDate())
+      .padStart(2, "0");
 
   return `${y}-${m}-${day}`;
 }
 
-dateInput.value = getTodayString();
+
+dateInput.value =
+  getTodayString();
 
 
 /* =========================
@@ -421,41 +563,49 @@ dateInput.value = getTodayString();
 
 function getStorageKey() {
 
-  return "kyudo_" + dateInput.value;
+  return "kyudo_" +
+    dateInput.value;
 }
 
 
 function loadShots() {
 
   const data =
-    localStorage.getItem(getStorageKey());
+    localStorage.getItem(
+      getStorageKey()
+    );
 
   if (data) {
 
     try {
 
-      shots = JSON.parse(data);
+      shots =
+        JSON.parse(data);
 
-      /*
-        古いデータには number がないので、
-        その場合は配列順から番号を補う。
-      */
+      shots.forEach(
+        (shot, index) => {
 
-      shots.forEach((shot, index) => {
+          if (
+            typeof shot.number !== "number" ||
+            !Number.isFinite(
+              shot.number
+            )
+          ) {
 
-        if (
-          typeof shot.number !== "number" ||
-          !Number.isFinite(shot.number)
-        ) {
-          shot.number = index + 1;
+            shot.number =
+              index + 1;
+          }
+
+          if (
+            typeof shot.comment !==
+            "string"
+          ) {
+
+            shot.comment = "";
+          }
+
         }
-
-        if (
-          typeof shot.comment !== "string"
-        ) {
-          shot.comment = "";
-        }
-      });
+      );
 
     } catch {
 
@@ -487,6 +637,7 @@ function saveShots() {
 function getNextShotNumber() {
 
   if (shots.length === 0) {
+
     return 1;
   }
 
@@ -494,12 +645,14 @@ function getNextShotNumber() {
 
   for (const shot of shots) {
 
-    const n = Number(shot.number);
+    const n =
+      Number(shot.number);
 
     if (
       Number.isFinite(n) &&
       n > maxNumber
     ) {
+
       maxNumber = n;
     }
   }
@@ -513,9 +666,28 @@ function getNextShotNumber() {
 ========================= */
 
 let W = 0;
+
 let H = 0;
+
 let dpr = 1;
 
+
+/*
+  ここで重要なのは、
+
+  実際の画面
+  width  = window.innerWidth
+  height = window.innerHeight
+
+  に対して、
+
+  アプリ内部は90°回転前なので
+
+  内部W = 実画面の高さ
+  内部H = 実画面の幅
+
+  とすること。
+*/
 
 function resize() {
 
@@ -525,14 +697,23 @@ function resize() {
       2
     );
 
-  W = window.innerWidth;
-  H = window.innerHeight;
+  W =
+    window.innerHeight;
 
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
+  H =
+    window.innerWidth;
 
-  canvas.style.width = W + "px";
-  canvas.style.height = H + "px";
+  canvas.width =
+    W * dpr;
+
+  canvas.height =
+    H * dpr;
+
+  canvas.style.width =
+    W + "px";
+
+  canvas.style.height =
+    H + "px";
 
   ctx.setTransform(
     dpr,
@@ -554,13 +735,71 @@ function resize() {
 function baseScale() {
 
   /*
-    ここは元コードから変更なし。
+    的は内部座標上では
+    縦方向に並んでいる。
 
-    横画面時の左右の的の中心が
-    左右端に来る倍率を維持する。
+    内部Hは実際の横画面の幅なので、
+
+      y = -1800
+      y = 0
+      y = +1800
+
+    が実画面の
+
+      右端
+      中央
+      左端
+
+    に対応する。
+
+    そのため横幅方向に
+    1800 × 2 が収まる倍率にする。
   */
 
-  return W / (TARGET_SPACING * 2);
+  return H /
+    (TARGET_SPACING * 2);
+}
+
+
+/* =========================
+   物理画面 → 内部座標
+========================= */
+
+/*
+  アプリ自体が -90° 回転しているので、
+
+  実画面の
+
+    (clientX, clientY)
+
+  を内部キャンバスの
+
+    (x, y)
+
+  に戻す。
+
+  実画面の左端
+    → 内部画面の下端
+
+  実画面の右端
+    → 内部画面の上端
+
+  となる。
+*/
+
+function physicalToCanvas(
+  clientX,
+  clientY
+) {
+
+  return {
+
+    x: clientY,
+
+    y:
+      window.innerWidth -
+      clientX
+  };
 }
 
 
@@ -570,32 +809,34 @@ function baseScale() {
 
 function worldToScreen(x, y) {
 
+  const s =
+    baseScale() * scale;
+
   return {
 
     x:
       W / 2 +
-      x * baseScale() * scale,
+      x * s,
 
     y:
       H / 2 +
-      (y - centerY) *
-      baseScale() *
-      scale
+      (y - centerY) * s
   };
 }
 
 
 function screenToWorld(x, y) {
 
+  const s =
+    baseScale() * scale;
+
   return {
 
     x:
-      (x - W / 2) /
-      (baseScale() * scale),
+      (x - W / 2) / s,
 
     y:
-      (y - H / 2) /
-      (baseScale() * scale) +
+      (y - H / 2) / s +
       centerY
   };
 }
@@ -610,17 +851,11 @@ function drawKasumi(cx, cy) {
   const s =
     baseScale() * scale;
 
-  const center = {
-
-    x:
-      W / 2 +
-      cx * s,
-
-    y:
-      H / 2 +
-      (cy - centerY) * s
-  };
-
+  const center =
+    worldToScreen(
+      cx,
+      cy
+    );
 
   const rings = [
 
@@ -689,45 +924,56 @@ function getOverlapGroup(shot) {
       shot.y
     );
 
-  return shots.filter(other => {
+  return shots.filter(
+    other => {
 
-    const q =
-      worldToScreen(
-        other.x,
-        other.y
+      const q =
+        worldToScreen(
+          other.x,
+          other.y
+        );
+
+      const dx =
+        p.x - q.x;
+
+      const dy =
+        p.y - q.y;
+
+      const distance =
+        Math.sqrt(
+          dx * dx +
+          dy * dy
+        );
+
+      return (
+        distance <=
+        OVERLAP_RADIUS
       );
-
-    const dx =
-      p.x - q.x;
-
-    const dy =
-      p.y - q.y;
-
-    const distance =
-      Math.sqrt(
-        dx * dx +
-        dy * dy
-      );
-
-    return distance <= OVERLAP_RADIUS;
-  });
+    }
+  );
 }
 
 
 function getShotColor(shot) {
 
   const group =
-    getOverlapGroup(shot);
+    getOverlapGroup(
+      shot
+    );
 
   if (group.length <= 1) {
+
     return "#e53935";
   }
 
   const index =
-    group.indexOf(shot);
+    group.indexOf(
+      shot
+    );
 
   return shotColors[
-    index % shotColors.length
+    index %
+    shotColors.length
   ];
 }
 
@@ -739,7 +985,8 @@ function getShotColor(shot) {
 function hasComment(shot) {
 
   return (
-    typeof shot.comment === "string" &&
+    typeof shot.comment ===
+      "string" &&
     shot.comment.trim() !== ""
   );
 }
@@ -751,8 +998,11 @@ function hasComment(shot) {
 
 function drawCommentMark(p) {
 
-  const x = p.x + 9;
-  const y = p.y - 9;
+  const x =
+    p.x + 9;
+
+  const y =
+    p.y - 9;
 
   ctx.beginPath();
 
@@ -764,7 +1014,9 @@ function drawCommentMark(p) {
     Math.PI * 2
   );
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle =
+    "#ffffff";
+
   ctx.fill();
 }
 
@@ -784,10 +1036,11 @@ function draw() {
 
 
   /*
-    全体を安土色
+    安土色
   */
 
-  ctx.fillStyle = "#b99668";
+  ctx.fillStyle =
+    "#b99668";
 
   ctx.fillRect(
     0,
@@ -807,7 +1060,8 @@ function draw() {
       CURTAIN_Y
     );
 
-  ctx.fillStyle = "#142f55";
+  ctx.fillStyle =
+    "#142f55";
 
   ctx.fillRect(
     0,
@@ -827,7 +1081,8 @@ function draw() {
       AZUCHI_TOP
     );
 
-  ctx.fillStyle = "#b99668";
+  ctx.fillStyle =
+    "#b99668";
 
   ctx.fillRect(
     0,
@@ -847,7 +1102,9 @@ function draw() {
       GROUND_Y
     );
 
-  ctx.strokeStyle = "#705335";
+  ctx.strokeStyle =
+    "#705335";
+
   ctx.lineWidth = 2;
 
   ctx.beginPath();
@@ -880,24 +1137,29 @@ function draw() {
   ]);
 
 
-  for (const x of [-900, 900]) {
+  /*
+    今回は的が縦に並ぶので、
+    境界線も横方向。
+  */
+
+  for (const y of [-900, 900]) {
 
     const p =
       worldToScreen(
-        x,
-        0
+        0,
+        y
       );
 
     ctx.beginPath();
 
     ctx.moveTo(
-      p.x,
-      0
+      0,
+      p.y
     );
 
     ctx.lineTo(
-      p.x,
-      H
+      W,
+      p.y
     );
 
     ctx.stroke();
@@ -907,98 +1169,140 @@ function draw() {
 
 
   /*
+    =========================
     的
+
+    内部座標では
+
+      上   → 右的
+      中   → 中央的
+      下   → 左的
+
+    これを -90° 回転することで
+
+      左 → 中央 → 右
+
+    になる。
+    =========================
   */
 
-  drawKasumi(-1800, 0);
-  drawKasumi(0, 0);
-  drawKasumi(1800, 0);
+  drawKasumi(
+    0,
+    1800
+  );
+
+  drawKasumi(
+    0,
+    0
+  );
+
+  drawKasumi(
+    0,
+    -1800
+  );
 
 
   /*
     矢
   */
 
-  shots.forEach((shot) => {
+  shots.forEach(
+    shot => {
 
-    const p =
-      worldToScreen(
-        shot.x,
-        shot.y
-      );
+      const p =
+        worldToScreen(
+          shot.x,
+          shot.y
+        );
 
 
-    /*
-      選択中
-    */
+      /*
+        選択中
+      */
 
-    if (selectedShots.has(shot)) {
+      if (
+        selectedShots.has(
+          shot
+        )
+      ) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+          p.x,
+          p.y,
+          SHOT_RADIUS + 5,
+          0,
+          Math.PI * 2
+        );
+
+        ctx.fillStyle =
+          "#ffffff";
+
+        ctx.fill();
+      }
+
+
+      /*
+        矢本体
+      */
 
       ctx.beginPath();
 
       ctx.arc(
         p.x,
         p.y,
-        SHOT_RADIUS + 5,
+        SHOT_RADIUS,
         0,
         Math.PI * 2
       );
 
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle =
+        getShotColor(
+          shot
+        );
+
       ctx.fill();
+
+
+      /*
+        番号
+      */
+
+      ctx.fillStyle =
+        "#ffffff";
+
+      ctx.font =
+        "bold 10px sans-serif";
+
+      ctx.textAlign =
+        "center";
+
+      ctx.textBaseline =
+        "middle";
+
+      ctx.fillText(
+        shot.number,
+        p.x,
+        p.y + 0.5
+      );
+
+
+      /*
+        コメントマーク
+      */
+
+      if (
+        hasComment(shot)
+      ) {
+
+        drawCommentMark(
+          p
+        );
+      }
+
     }
-
-
-    /*
-      矢本体
-    */
-
-    ctx.beginPath();
-
-    ctx.arc(
-      p.x,
-      p.y,
-      SHOT_RADIUS,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fillStyle =
-      getShotColor(shot);
-
-    ctx.fill();
-
-
-    /*
-      番号
-    */
-
-    ctx.fillStyle = "#ffffff";
-
-    ctx.font =
-      "bold 10px sans-serif";
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.fillText(
-      shot.number,
-      p.x,
-      p.y + 0.5
-    );
-
-
-    /*
-      コメント済みなら
-      右上に小さな点
-    */
-
-    if (hasComment(shot)) {
-
-      drawCommentMark(p);
-    }
-
-  });
+  );
 
 
   /*
@@ -1032,11 +1336,10 @@ function draw() {
    矢を探す
 ========================= */
 
-function findShot(screenX, screenY) {
-
-  /*
-    新しい矢を優先
-  */
+function findShot(
+  screenX,
+  screenY
+) {
 
   for (
     let i = shots.length - 1;
@@ -1062,7 +1365,9 @@ function findShot(screenX, screenY) {
         dy * dy
       );
 
-    if (distance <= 16) {
+    if (
+      distance <= 16
+    ) {
 
       return shots[i];
     }
@@ -1083,7 +1388,9 @@ function findOverlappingShots(
 
   const result = [];
 
-  for (const shot of shots) {
+  for (
+    const shot of shots
+  ) {
 
     const p =
       worldToScreen(
@@ -1103,9 +1410,13 @@ function findOverlappingShots(
         dy * dy
       );
 
-    if (distance <= 16) {
+    if (
+      distance <= 16
+    ) {
 
-      result.push(shot);
+      result.push(
+        shot
+      );
     }
   }
 
@@ -1122,11 +1433,8 @@ function addShot(
   screenY
 ) {
 
-  /*
-    ピンチ中は絶対に追加しない
-  */
-
   if (isPinching) {
+
     return;
   }
 
@@ -1168,12 +1476,13 @@ function addShot(
 
 
 /* =========================
-   編集画面を開く
+   編集画面
 ========================= */
 
 function openEditShot(shot) {
 
-  editingShot = shot;
+  editingShot =
+    shot;
 
   editNumber.value =
     shot.number;
@@ -1184,21 +1493,21 @@ function openEditShot(shot) {
   editModal.style.display =
     "flex";
 
-  setTimeout(() => {
+  setTimeout(
+    () => {
 
-    editComment.focus();
+      editComment.focus();
 
-  }, 50);
+    },
+    50
+  );
 }
 
 
-/* =========================
-   編集画面を閉じる
-========================= */
-
 function closeEditModal() {
 
-  editingShot = null;
+  editingShot =
+    null;
 
   editModal.style.display =
     "none";
@@ -1207,7 +1516,6 @@ function closeEditModal() {
 
 /* =========================
    編集：保存
-   割り込み方式
 ========================= */
 
 editSave.addEventListener(
@@ -1215,12 +1523,15 @@ editSave.addEventListener(
   () => {
 
     if (!editingShot) {
+
       return;
     }
 
 
     let number =
-      Number(editNumber.value);
+      Number(
+        editNumber.value
+      );
 
 
     if (
@@ -1241,7 +1552,9 @@ editSave.addEventListener(
 
 
     const oldNumber =
-      Number(editingShot.number);
+      Number(
+        editingShot.number
+      );
 
 
     number =
@@ -1255,17 +1568,22 @@ editSave.addEventListener(
       number < oldNumber
     ) {
 
-      for (const shot of shots) {
+      for (
+        const shot of shots
+      ) {
 
         if (
           shot === editingShot
         ) {
+
           continue;
         }
 
 
         const n =
-          Number(shot.number);
+          Number(
+            shot.number
+          );
 
 
         if (
@@ -1277,24 +1595,27 @@ editSave.addEventListener(
             n + 1;
         }
       }
-    }
 
-
-    else if (
+    } else if (
       number > oldNumber
     ) {
 
-      for (const shot of shots) {
+      for (
+        const shot of shots
+      ) {
 
         if (
           shot === editingShot
         ) {
+
           continue;
         }
 
 
         const n =
-          Number(shot.number);
+          Number(
+            shot.number
+          );
 
 
         if (
@@ -1311,7 +1632,6 @@ editSave.addEventListener(
 
     editingShot.number =
       number;
-
 
     editingShot.comment =
       editComment.value;
@@ -1335,6 +1655,7 @@ editDelete.addEventListener(
   () => {
 
     if (!editingShot) {
+
       return;
     }
 
@@ -1347,12 +1668,15 @@ editDelete.addEventListener(
 
 
     if (!ok) {
+
       return;
     }
 
 
     const deletedNumber =
-      Number(editingShot.number);
+      Number(
+        editingShot.number
+      );
 
 
     const index =
@@ -1370,12 +1694,18 @@ editDelete.addEventListener(
     }
 
 
-    for (const shot of shots) {
+    for (
+      const shot of shots
+    ) {
 
       const n =
-        Number(shot.number);
+        Number(
+          shot.number
+        );
 
-      if (n > deletedNumber) {
+      if (
+        n > deletedNumber
+      ) {
 
         shot.number =
           n - 1;
@@ -1410,10 +1740,6 @@ editCancel.addEventListener(
 );
 
 
-/*
-  モーダルの外側をタップしても閉じる
-*/
-
 editModal.addEventListener(
   "click",
   e => {
@@ -1435,15 +1761,32 @@ editModal.addEventListener(
 let draggingShot = null;
 
 let dragOffsetX = 0;
+
 let dragOffsetY = 0;
 
 let pointerStartX = 0;
+
 let pointerStartY = 0;
 
 let moved = false;
 
 let tapTimer = null;
+
 let lastTapShot = null;
+
+
+/*
+  実画面のタッチ座標を
+  回転前の内部キャンバス座標へ変換。
+*/
+
+function getCanvasPoint(e) {
+
+  return physicalToCanvas(
+    e.clientX,
+    e.clientY
+  );
+}
 
 
 /* =========================
@@ -1458,11 +1801,7 @@ canvas.addEventListener(
 
 
     /*
-      2本目以降のタッチ入力。
-
-      ピンチズーム開始時には、
-      1本目の指で予約されていた
-      「矢を追加」をキャンセルする。
+      2本目の指
     */
 
     if (
@@ -1488,22 +1827,27 @@ canvas.addEventListener(
     }
 
 
-    /*
-      すでにピンチ中なら
-      通常操作を受け付けない。
-    */
-
     if (isPinching) {
 
       return;
     }
 
 
+    const point =
+      getCanvasPoint(e);
+
+    const x =
+      point.x;
+
+    const y =
+      point.y;
+
+
     pointerStartX =
-      e.clientX;
+      x;
 
     pointerStartY =
-      e.clientY;
+      y;
 
     moved = false;
 
@@ -1516,8 +1860,8 @@ canvas.addEventListener(
 
       const candidates =
         findOverlappingShots(
-          e.clientX,
-          e.clientY
+          x,
+          y
         );
 
 
@@ -1532,11 +1876,11 @@ canvas.addEventListener(
       const samePosition =
         lastSelectionX !== null &&
         Math.abs(
-          e.clientX -
+          x -
           lastSelectionX
         ) < 16 &&
         Math.abs(
-          e.clientY -
+          y -
           lastSelectionY
         ) < 16;
 
@@ -1546,7 +1890,8 @@ canvas.addEventListener(
         selectionCycle =
           candidates;
 
-        selectionCycleIndex = 0;
+        selectionCycleIndex =
+          0;
 
       } else {
 
@@ -1557,7 +1902,8 @@ canvas.addEventListener(
           selectionCycle.length
         ) {
 
-          selectionCycleIndex = 0;
+          selectionCycleIndex =
+            0;
         }
       }
 
@@ -1569,7 +1915,9 @@ canvas.addEventListener(
 
 
       if (
-        selectedShots.has(shot)
+        selectedShots.has(
+          shot
+        )
       ) {
 
         selectedShots.delete(
@@ -1585,10 +1933,10 @@ canvas.addEventListener(
 
 
       lastSelectionX =
-        e.clientX;
+        x;
 
       lastSelectionY =
-        e.clientY;
+        y;
 
 
       draw();
@@ -1603,8 +1951,8 @@ canvas.addEventListener(
 
     const shot =
       findShot(
-        e.clientX,
-        e.clientY
+        x,
+        y
       );
 
 
@@ -1614,7 +1962,8 @@ canvas.addEventListener(
 
     if (shot) {
 
-      draggingShot = shot;
+      draggingShot =
+        shot;
 
 
       const p =
@@ -1625,10 +1974,10 @@ canvas.addEventListener(
 
 
       dragOffsetX =
-        p.x - e.clientX;
+        p.x - x;
 
       dragOffsetY =
-        p.y - e.clientY;
+        p.y - y;
 
 
       /*
@@ -1657,10 +2006,6 @@ canvas.addEventListener(
       }
 
 
-      /*
-        1回目のタップ
-      */
-
       lastTapShot =
         shot;
 
@@ -1669,32 +2014,26 @@ canvas.addEventListener(
         setTimeout(
           () => {
 
-            /*
-              ピンチ中なら追加しない
-            */
-
             if (isPinching) {
 
-              lastTapShot = null;
+              lastTapShot =
+                null;
 
               return;
             }
 
 
-            /*
-              1回のタップなら
-              同じ場所に新しい矢を追加
-            */
-
             addShot(
-              e.clientX,
-              e.clientY
+              x,
+              y
             );
+
 
             lastTapShot =
               null;
 
-            tapTimer = null;
+            tapTimer =
+              null;
 
           },
           300
@@ -1710,8 +2049,8 @@ canvas.addEventListener(
     */
 
     addShot(
-      e.clientX,
-      e.clientY
+      x,
+      y
     );
 
   },
@@ -1732,28 +2071,33 @@ canvas.addEventListener(
     e.preventDefault();
 
 
-    /*
-      ピンチ中は
-      矢を動かさない。
-    */
-
     if (isPinching) {
+
       return;
     }
 
 
     if (!draggingShot) {
+
       return;
     }
 
 
+    const point =
+      getCanvasPoint(e);
+
+    const x =
+      point.x;
+
+    const y =
+      point.y;
+
+
     const dx =
-      e.clientX -
-      pointerStartX;
+      x - pointerStartX;
 
     const dy =
-      e.clientY -
-      pointerStartY;
+      y - pointerStartY;
 
 
     if (
@@ -1764,11 +2108,6 @@ canvas.addEventListener(
       moved = true;
     }
 
-
-    /*
-      ドラッグしたら
-      タップ処理をキャンセル
-    */
 
     if (moved) {
 
@@ -1784,17 +2123,10 @@ canvas.addEventListener(
 
     const p =
       screenToWorld(
-        e.clientX +
-          dragOffsetX,
-
-        e.clientY +
-          dragOffsetY
+        x + dragOffsetX,
+        y + dragOffsetY
       );
 
-
-    /*
-      記録範囲内に制限
-    */
 
     p.x =
       Math.max(
@@ -1841,11 +2173,6 @@ canvas.addEventListener(
 
     e.preventDefault();
 
-
-    /*
-      ピンチ中に離した指は
-      通常の操作として扱わない。
-    */
 
     if (isPinching) {
 
@@ -1970,10 +2297,9 @@ function getTouchDistance(e) {
 }
 
 
-/*
-  2本目の指が触れた瞬間に
-  タップ予約をキャンセルする。
-*/
+/* =========================
+   2本目の指
+========================= */
 
 canvas.addEventListener(
   "touchstart",
@@ -2012,9 +2338,9 @@ canvas.addEventListener(
 );
 
 
-/*
-  ピンチズーム中
-*/
+/* =========================
+   ピンチズーム中
+========================= */
 
 canvas.addEventListener(
   "touchmove",
@@ -2029,7 +2355,6 @@ canvas.addEventListener(
 
 
     e.preventDefault();
-
 
     isPinching = true;
 
@@ -2076,9 +2401,9 @@ canvas.addEventListener(
 );
 
 
-/*
-  ピンチ終了
-*/
+/* =========================
+   ピンチ終了
+========================= */
 
 canvas.addEventListener(
   "touchend",
@@ -2088,13 +2413,17 @@ canvas.addEventListener(
       e.touches.length < 2
     ) {
 
-      pinchStartDistance = null;
+      pinchStartDistance =
+        null;
 
-      isPinching = false;
+      isPinching =
+        false;
 
-      draggingShot = null;
+      draggingShot =
+        null;
 
       moved = false;
+
 
       clearTimeout(
         tapTimer
@@ -2112,21 +2441,25 @@ canvas.addEventListener(
 );
 
 
-/*
-  ピンチがキャンセルされた場合
-*/
+/* =========================
+   ピンチキャンセル
+========================= */
 
 canvas.addEventListener(
   "touchcancel",
   () => {
 
-    pinchStartDistance = null;
+    pinchStartDistance =
+      null;
 
-    isPinching = false;
+    isPinching =
+      false;
 
-    draggingShot = null;
+    draggingShot =
+      null;
 
     moved = false;
+
 
     clearTimeout(
       tapTimer
@@ -2135,6 +2468,7 @@ canvas.addEventListener(
     tapTimer = null;
 
     lastTapShot = null;
+
   },
   {
     passive: false
@@ -2158,6 +2492,7 @@ resetButton.addEventListener(
 
 
     if (!ok) {
+
       return;
     }
 
@@ -2192,6 +2527,7 @@ selectButton.addEventListener(
     selectionCycleIndex = 0;
 
     lastSelectionX = null;
+
     lastSelectionY = null;
 
     draw();
@@ -2223,20 +2559,19 @@ deleteSelectedButton.addEventListener(
 
 
     if (!ok) {
+
       return;
     }
 
-
-    /*
-      削除する矢の番号を保存
-    */
 
     const deletedNumbers =
       Array.from(
         selectedShots
       ).map(
         shot =>
-          Number(shot.number)
+          Number(
+            shot.number
+          )
       );
 
 
@@ -2249,21 +2584,22 @@ deleteSelectedButton.addEventListener(
       );
 
 
-    /*
-      削除された番号の個数だけ
-      後ろの番号を繰り上げる
-    */
-
-    for (const shot of shots) {
+    for (
+      const shot of shots
+    ) {
 
       const n =
-        Number(shot.number);
+        Number(
+          shot.number
+        );
+
 
       const shiftCount =
         deletedNumbers.filter(
           deletedNumber =>
             deletedNumber < n
         ).length;
+
 
       shot.number =
         n - shiftCount;
@@ -2296,6 +2632,7 @@ cancelSelectButton.addEventListener(
     selectionCycleIndex = 0;
 
     lastSelectionX = null;
+
     lastSelectionY = null;
 
     draw();
@@ -2320,6 +2657,7 @@ dateInput.addEventListener(
     selectionCycleIndex = 0;
 
     lastSelectionX = null;
+
     lastSelectionY = null;
 
     loadShots();
