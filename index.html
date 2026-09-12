@@ -2,260 +2,227 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
 
 <title>弓道 矢所記録</title>
 
 <style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  * {
-    box-sizing: border-box;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #b99668;
+  font-family: sans-serif;
+  touch-action: none;
+}
 
-  html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #b99668;
-    font-family: sans-serif;
-    touch-action: none;
-  }
+/* =========================================================
+   アプリ全体
+   iPhoneは縦向きのまま使い、アプリそのものを -90°回転
+   ========================================================= */
 
-  /*
-    =========================
-    アプリ全体を -90° 回転
-    =========================
+#app {
+  position: fixed;
 
-    内部では「縦画面」として描画し、
-    それを物理画面上で -90° 回転させる。
-  */
+  width: 100vh;
+  height: 100vw;
 
-  #app {
-    position: fixed;
+  left: 50%;
+  top: 50%;
 
-    width: 100vh;
-    height: 100vw;
+  transform:
+    translate(-50%, -50%)
+    rotate(-90deg);
 
-    left: 50%;
-    top: 50%;
+  transform-origin: center center;
 
-    transform:
-      translate(-50%, -50%)
-      rotate(-90deg);
+  overflow: hidden;
+  background: #b99668;
+}
 
-    transform-origin: center center;
+/* =========================================================
+   Canvas
+   ========================================================= */
 
-    overflow: hidden;
-  }
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
 
-  canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-  }
+  width: 100%;
+  height: 100%;
 
-  #dateBox {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
+  display: block;
 
-    background: rgba(255,255,255,0.92);
+  touch-action: none;
+}
 
-    padding: 6px 8px;
-    border-radius: 8px;
+/* =========================================================
+   日付
+   ========================================================= */
 
-    font-size: 14px;
-  }
+#dateBox {
+  position: absolute;
 
-  #date {
-    font-size: 14px;
-  }
+  top: 12px;
+  left: 12px;
 
-  #buttons {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
+  z-index: 10;
 
-    display: flex;
-    gap: 5px;
-  }
+  background: rgba(255,255,255,0.92);
 
-  #buttons button,
-  #selectionBar button {
-    border: none;
-    border-radius: 8px;
+  padding: 7px 9px;
 
-    background: rgba(255,255,255,0.94);
+  border-radius: 7px;
 
-    padding: 7px 10px;
+  box-shadow:
+    0 1px 4px rgba(0,0,0,0.25);
+}
 
-    font-size: 14px;
-  }
+#dateInput {
+  border: none;
+  background: transparent;
 
-  #buttons button:active,
-  #selectionBar button:active {
-    background: #ddd;
-  }
+  font-size: 15px;
+  font-weight: bold;
 
-  #selectionInfo {
-    position: absolute;
+  outline: none;
+}
 
-    bottom: 58px;
-    left: 50%;
+/* =========================================================
+   ボタン
+   ========================================================= */
 
-    transform: translateX(-50%);
+#buttons {
+  position: absolute;
 
-    z-index: 10;
+  top: 12px;
+  right: 12px;
 
-    background: rgba(255,255,255,0.94);
+  z-index: 10;
 
-    border-radius: 8px;
+  display: flex;
+  gap: 6px;
+}
 
-    padding: 5px 10px;
+button {
+  border: none;
 
-    font-size: 14px;
+  padding: 8px 12px;
 
-    display: none;
-  }
+  border-radius: 7px;
 
-  #selectionBar {
-    position: absolute;
+  background: rgba(255,255,255,0.92);
 
-    bottom: 10px;
-    left: 50%;
+  font-size: 14px;
 
-    transform: translateX(-50%);
+  box-shadow:
+    0 1px 4px rgba(0,0,0,0.25);
+}
 
-    z-index: 10;
+button:active {
+  transform: scale(0.96);
+}
 
-    display: none;
+/* =========================================================
+   選択表示
+   ========================================================= */
 
-    gap: 6px;
-  }
+#selection {
+  position: absolute;
 
+  left: 50%;
+  bottom: 12px;
 
-  /* =========================
-     矢の編集モーダル
-  ========================= */
+  transform: translateX(-50%);
 
-  #editModal {
-    position: absolute;
+  z-index: 10;
 
-    inset: 0;
+  display: none;
 
-    z-index: 30;
+  background: rgba(255,255,255,0.94);
 
-    display: none;
+  padding: 8px 12px;
 
-    align-items: center;
-    justify-content: center;
+  border-radius: 8px;
 
-    background: rgba(0,0,0,0.35);
-  }
+  box-shadow:
+    0 1px 5px rgba(0,0,0,0.25);
 
-  #editPanel {
-    width: min(360px, calc(100% - 32px));
+  font-size: 14px;
+}
 
-    background: white;
+/* =========================================================
+   コメント入力モーダル
+   ========================================================= */
 
-    border-radius: 14px;
+#modal {
+  position: absolute;
 
-    padding: 18px;
+  inset: 0;
 
-    box-shadow:
-      0 8px 30px rgba(0,0,0,0.25);
-  }
+  z-index: 100;
 
-  #editPanel h2 {
-    margin: 0 0 16px;
+  display: none;
 
-    font-size: 18px;
-  }
+  align-items: center;
+  justify-content: center;
 
-  .editLabel {
-    display: block;
+  background: rgba(0,0,0,0.35);
+}
 
-    margin-bottom: 6px;
+#modalBox {
+  width: min(320px, 80%);
 
-    font-size: 13px;
+  background: white;
 
-    color: #555;
-  }
+  padding: 16px;
 
-  #editNumber {
-    width: 100%;
-    height: 42px;
+  border-radius: 10px;
 
-    border: 1px solid #ccc;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.35);
+}
 
-    border-radius: 8px;
+#commentInput {
+  width: 100%;
 
-    padding: 6px 10px;
+  min-height: 80px;
 
-    font-size: 16px;
-  }
+  resize: none;
 
-  #editComment {
-    width: 100%;
-    height: 90px;
+  border: 1px solid #bbb;
 
-    resize: none;
+  border-radius: 6px;
 
-    border: 1px solid #ccc;
+  padding: 8px;
 
-    border-radius: 8px;
+  font-size: 15px;
 
-    padding: 8px 10px;
+  outline: none;
+}
 
-    font-size: 15px;
+#modalButtons {
+  display: flex;
 
-    font-family: sans-serif;
-  }
+  justify-content: flex-end;
 
-  #editButtons {
-    display: flex;
+  gap: 7px;
 
-    gap: 7px;
-
-    margin-top: 14px;
-  }
-
-  #editButtons button {
-    flex: 1;
-
-    border: none;
-
-    border-radius: 8px;
-
-    padding: 9px 6px;
-
-    font-size: 14px;
-  }
-
-  #editDelete {
-    background: #e53935;
-    color: white;
-  }
-
-  #editCancel {
-    background: #eee;
-  }
-
-  #editSave {
-    background: #1976d2;
-    color: white;
-  }
-
-  #editButtons button:active {
-    opacity: 0.75;
-  }
-
+  margin-top: 10px;
+}
 </style>
 </head>
 
@@ -265,163 +232,78 @@
 
   <canvas id="canvas"></canvas>
 
+  <!-- 日付 -->
   <div id="dateBox">
-    <input type="date" id="date">
+    <input type="date" id="dateInput">
   </div>
 
+  <!-- ボタン -->
   <div id="buttons">
-    <button id="reset">リセット</button>
-    <button id="select">選択</button>
-    <button id="minus">−</button>
-    <button id="plus">＋</button>
+    <button id="resetBtn">リセット</button>
   </div>
 
-  <div id="selectionInfo">
-    0本選択中
-  </div>
+  <!-- 選択表示 -->
+  <div id="selection"></div>
 
-  <div id="selectionBar">
-    <button id="deleteSelected">
-      選択削除
-    </button>
-
-    <button id="cancelSelect">
-      終了
-    </button>
-  </div>
-
-
-  <!-- =========================
-       矢の編集画面
-  ========================= -->
-
-  <div id="editModal">
-
-    <div id="editPanel">
-
-      <h2>矢の記録を編集</h2>
-
-      <label
-        class="editLabel"
-        for="editNumber"
-      >
-        何本目？
-      </label>
-
-      <input
-        id="editNumber"
-        type="number"
-        min="1"
-        step="1"
-      >
-
-      <br><br>
-
-      <label
-        class="editLabel"
-        for="editComment"
-      >
-        コメント
-      </label>
+  <!-- コメント入力 -->
+  <div id="modal">
+    <div id="modalBox">
 
       <textarea
-        id="editComment"
-        placeholder="コメントを入力"
+        id="commentInput"
+        placeholder="コメント（任意）"
       ></textarea>
 
-      <div id="editButtons">
-
-        <button id="editDelete">
-          削除
-        </button>
-
-        <button id="editCancel">
-          キャンセル
-        </button>
-
-        <button id="editSave">
-          保存
-        </button>
-
+      <div id="modalButtons">
+        <button id="cancelBtn">キャンセル</button>
+        <button id="saveBtn">保存</button>
       </div>
 
     </div>
-
   </div>
 
 </div>
 
-
 <script>
+"use strict";
 
-const canvas =
-  document.getElementById("canvas");
+/* =========================================================
+   基本設定
+   ========================================================= */
 
-const ctx =
-  canvas.getContext("2d");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-const dateInput =
-  document.getElementById("date");
+const app = document.getElementById("app");
 
-const resetButton =
-  document.getElementById("reset");
+const dateInput = document.getElementById("dateInput");
+const resetBtn = document.getElementById("resetBtn");
 
-const selectButton =
-  document.getElementById("select");
+const selection = document.getElementById("selection");
 
-const minusButton =
-  document.getElementById("minus");
+const modal = document.getElementById("modal");
+const commentInput = document.getElementById("commentInput");
 
-const plusButton =
-  document.getElementById("plus");
-
-const selectionInfo =
-  document.getElementById("selectionInfo");
-
-const selectionBar =
-  document.getElementById("selectionBar");
-
-const deleteSelectedButton =
-  document.getElementById("deleteSelected");
-
-const cancelSelectButton =
-  document.getElementById("cancelSelect");
+const cancelBtn = document.getElementById("cancelBtn");
+const saveBtn = document.getElementById("saveBtn");
 
 
-/* =========================
-   編集画面
-========================= */
-
-const editModal =
-  document.getElementById("editModal");
-
-const editNumber =
-  document.getElementById("editNumber");
-
-const editComment =
-  document.getElementById("editComment");
-
-const editDelete =
-  document.getElementById("editDelete");
-
-const editCancel =
-  document.getElementById("editCancel");
-
-const editSave =
-  document.getElementById("editSave");
-
-let editingShot = null;
-
-
-/* =========================
+/* =========================================================
    弓道場・的の設定
-========================= */
+   ========================================================= */
 
 const TARGET_SPACING = 1800;
 
 const TARGET_DIAMETER = 360;
+const TARGET_RADIUS = TARGET_DIAMETER / 2;
 
-const TARGET_RADIUS = 180;
+const SHOT_RADIUS = 9;
+const OVERLAP_RADIUS = SHOT_RADIUS * 0.6;
+
+
+/* =========================================================
+   背景のワールド座標
+   ========================================================= */
 
 const GROUND_Y = 270;
 
@@ -429,603 +311,566 @@ const CURTAIN_Y = -900;
 
 const AZUCHI_TOP = -330;
 
-const RECORD_TOP = -1200;
 
+/* =========================================================
+   記録領域
+   ========================================================= */
+
+const RECORD_TOP = -1200;
 const RECORD_BOTTOM = 600;
 
 const RECORD_LEFT = -1800;
-
 const RECORD_RIGHT = 1800;
 
 
-/* =========================
-   矢の設定
-========================= */
+/* =========================================================
+   Canvasサイズ
+   ========================================================= */
 
-const SHOT_RADIUS = 9;
+/*
+  物理的にはiPhoneを横向きに持つが、
+  画面そのものは縦向き状態。
 
-const OVERLAP_RADIUS = 5.4;
+  内部座標では
 
+    W = 元の画面の高さ
+    H = 元の画面の幅
 
-/* =========================
-   矢の色
-========================= */
+  とする。
 
-const shotColors = [
-  "#e53935",
-  "#1976d2",
-  "#2e9d50",
-  "#f28c28",
-  "#8e44ad",
-  "#008b8b",
-  "#d81b60",
-  "#6d4c41"
-];
+  最後に #app 全体を -90° 回転する。
+*/
+
+let W = 0;
+let H = 0;
 
 
-/* =========================
-   表示倍率
-========================= */
+/* =========================================================
+   ズーム・パン
+   ========================================================= */
 
 let scale = 1;
 
 const MIN_SCALE = 0.4;
-
 const MAX_SCALE = 4;
-
-
-/*
-  内部座標は「縦画面」。
-
-  つまり、
-
-      上
-      ↑
-  右的
-  中央的
-  左的
-      ↓
-      下
-
-  という配置にしてから、
-  アプリ全体を -90° 回転する。
-
-  その結果、実際のiPhoneでは
-
-  左的 ─ 中央的 ─ 右的
-
-  になる。
-*/
 
 let centerY = 0;
 
 
-/* =========================
+/* =========================================================
    データ
-========================= */
+   ========================================================= */
 
 let shots = [];
 
-let selectionMode = false;
-
-let selectedShots = new Set();
-
-let selectionCycle = [];
-
-let selectionCycleIndex = 0;
-
-let lastSelectionX = null;
-
-let lastSelectionY = null;
+let selectedShotIndex = -1;
 
 
-/* =========================
-   ピンチ状態
-========================= */
-
-let pinchStartDistance = null;
-
-let pinchStartScale = 1;
+/* =========================================================
+   ピンチ操作
+   ========================================================= */
 
 let isPinching = false;
 
+let pinchStartDistance = 0;
+let pinchStartScale = 1;
 
-/* =========================
-   今日の日付
-========================= */
+let tapTimer = null;
+
+
+/* =========================================================
+   日付
+   ========================================================= */
 
 function getTodayString() {
-
   const d = new Date();
 
-  const y =
-    d.getFullYear();
-
-  const m =
-    String(d.getMonth() + 1)
-      .padStart(2, "0");
-
-  const day =
-    String(d.getDate())
-      .padStart(2, "0");
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
 
   return `${y}-${m}-${day}`;
 }
 
-
-dateInput.value =
-  getTodayString();
+dateInput.value = getTodayString();
 
 
-/* =========================
-   保存・読み込み
-========================= */
+/* =========================================================
+   LocalStorage
+   ========================================================= */
 
-function getStorageKey() {
-
-  return "kyudo_" +
-    dateInput.value;
+function storageKey() {
+  return "kyudo_" + dateInput.value;
 }
 
 
-function loadShots() {
+function loadData() {
+  try {
+    const raw = localStorage.getItem(storageKey());
 
-  const data =
-    localStorage.getItem(
-      getStorageKey()
-    );
-
-  if (data) {
-
-    try {
-
-      shots =
-        JSON.parse(data);
-
-      shots.forEach(
-        (shot, index) => {
-
-          if (
-            typeof shot.number !== "number" ||
-            !Number.isFinite(
-              shot.number
-            )
-          ) {
-
-            shot.number =
-              index + 1;
-          }
-
-          if (
-            typeof shot.comment !==
-            "string"
-          ) {
-
-            shot.comment = "";
-          }
-
-        }
-      );
-
-    } catch {
-
+    if (raw) {
+      shots = JSON.parse(raw);
+    } else {
       shots = [];
     }
 
-  } else {
-
+  } catch (e) {
+    console.error(e);
     shots = [];
   }
 
-  selectedShots.clear();
-}
+  selectedShotIndex = -1;
 
-
-function saveShots() {
-
-  localStorage.setItem(
-    getStorageKey(),
-    JSON.stringify(shots)
-  );
-}
-
-
-/* =========================
-   次の矢の番号
-========================= */
-
-function getNextShotNumber() {
-
-  if (shots.length === 0) {
-
-    return 1;
-  }
-
-  let maxNumber = 0;
-
-  for (const shot of shots) {
-
-    const n =
-      Number(shot.number);
-
-    if (
-      Number.isFinite(n) &&
-      n > maxNumber
-    ) {
-
-      maxNumber = n;
-    }
-  }
-
-  return maxNumber + 1;
-}
-
-
-/* =========================
-   キャンバスサイズ
-========================= */
-
-let W = 0;
-
-let H = 0;
-
-let dpr = 1;
-
-
-/*
-  ここで重要なのは、
-
-  実際の画面
-  width  = window.innerWidth
-  height = window.innerHeight
-
-  に対して、
-
-  アプリ内部は90°回転前なので
-
-  内部W = 実画面の高さ
-  内部H = 実画面の幅
-
-  とすること。
-*/
-
-function resize() {
-
-  dpr =
-    Math.min(
-      window.devicePixelRatio || 1,
-      2
-    );
-
-  W =
-    window.innerHeight;
-
-  H =
-    window.innerWidth;
-
-  canvas.width =
-    W * dpr;
-
-  canvas.height =
-    H * dpr;
-
-  canvas.style.width =
-    W + "px";
-
-  canvas.style.height =
-    H + "px";
-
-  ctx.setTransform(
-    dpr,
-    0,
-    0,
-    dpr,
-    0,
-    0
-  );
+  updateSelection();
 
   draw();
 }
 
 
-/* =========================
-   基準倍率
-========================= */
+function saveData() {
+  localStorage.setItem(
+    storageKey(),
+    JSON.stringify(shots)
+  );
+}
+
+
+/* =========================================================
+   Canvasサイズ
+   ========================================================= */
+
+function resizeCanvas() {
+
+  /*
+    CSSで #app は
+
+      width  = 100vh
+      height = 100vw
+
+    になっている。
+
+    したがって内部Canvasは
+
+      W = innerHeight
+      H = innerWidth
+
+    とする。
+  */
+
+  W = window.innerHeight;
+  H = window.innerWidth;
+
+  canvas.width = W;
+  canvas.height = H;
+
+  draw();
+}
+
+
+/* =========================================================
+   基本スケール
+   ========================================================= */
 
 function baseScale() {
 
   /*
-    的は内部座標上では
-    縦方向に並んでいる。
+    的3枚を
 
-    内部Hは実際の横画面の幅なので、
+      左 ─ 中央 ─ 右
 
-      y = -1800
-      y = 0
-      y = +1800
+    に並べたとき、
 
-    が実画面の
+      1800 × 2 = 3600
 
-      右端
-      中央
-      左端
+    が画面横幅いっぱいになるようにする。
 
-    に対応する。
-
-    そのため横幅方向に
-    1800 × 2 が収まる倍率にする。
+    内部座標では的がY方向に並んでいるため、
+    Hを基準にする。
   */
 
-  return H /
-    (TARGET_SPACING * 2);
+  return H / (TARGET_SPACING * 2);
 }
 
 
-/* =========================
-   物理画面 → 内部座標
-========================= */
-
-/*
-  アプリ自体が -90° 回転しているので、
-
-  実画面の
-
-    (clientX, clientY)
-
-  を内部キャンバスの
-
-    (x, y)
-
-  に戻す。
-
-  実画面の左端
-    → 内部画面の下端
-
-  実画面の右端
-    → 内部画面の上端
-
-  となる。
-*/
-
-function physicalToCanvas(
-  clientX,
-  clientY
-) {
-
-  return {
-
-    x: clientY,
-
-    y:
-      window.innerWidth -
-      clientX
-  };
-}
-
-
-/* =========================
-   座標変換
-========================= */
+/* =========================================================
+   ワールド → Canvas座標
+   ========================================================= */
 
 function worldToScreen(x, y) {
 
-  const s =
-    baseScale() * scale;
+  const s = baseScale() * scale;
 
   return {
-
-    x:
-      W / 2 +
-      x * s,
-
-    y:
-      H / 2 +
-      (y - centerY) * s
+    x: W / 2 + x * s,
+    y: H / 2 + (y - centerY) * s
   };
 }
 
+
+/* =========================================================
+   Canvas → ワールド
+   ========================================================= */
 
 function screenToWorld(x, y) {
 
-  const s =
-    baseScale() * scale;
+  const s = baseScale() * scale;
 
   return {
-
-    x:
-      (x - W / 2) / s,
-
-    y:
-      (y - H / 2) / s +
-      centerY
+    x: (x - W / 2) / s,
+    y: (y - H / 2) / s + centerY
   };
 }
 
 
-/* =========================
-   霞的
-========================= */
+/* =========================================================
+   物理画面座標 → 内部Canvas座標
+   ========================================================= */
 
-function drawKasumi(cx, cy) {
+function physicalToCanvas(clientX, clientY) {
 
-  const s =
-    baseScale() * scale;
+  /*
+    #app全体が -90° 回転しているので、
+    タッチ座標も逆変換する。
 
-  const center =
-    worldToScreen(
-      cx,
-      cy
-    );
+    iPhoneを横向きに持ったとき、
 
-  const rings = [
+      physical X → internal Y
+      physical Y → internal X
 
-    {
-      r: 180,
-      color: "#202020"
-    },
+    となる。
+  */
 
-    {
-      r: 147,
-      color: "#f8f6ed"
-    },
-
-    {
-      r: 117,
-      color: "#202020"
-    },
-
-    {
-      r: 102,
-      color: "#f8f6ed"
-    },
-
-    {
-      r: 72,
-      color: "#202020"
-    },
-
-    {
-      r: 36,
-      color: "#f8f6ed"
-    }
-
-  ];
-
-
-  for (const ring of rings) {
-
-    ctx.beginPath();
-
-    ctx.arc(
-      center.x,
-      center.y,
-      ring.r * s,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fillStyle =
-      ring.color;
-
-    ctx.fill();
-  }
+  return {
+    x: clientY,
+    y: window.innerWidth - clientX
+  };
 }
 
 
-/* =========================
-   重なり判定
-========================= */
+/* =========================================================
+   的
+   ========================================================= */
 
-function getOverlapGroup(shot) {
+function drawKasumi(x, y) {
 
-  const p =
-    worldToScreen(
-      shot.x,
-      shot.y
-    );
+  const p = worldToScreen(x, y);
 
-  return shots.filter(
-    other => {
+  const r = TARGET_RADIUS * baseScale() * scale;
 
-      const q =
-        worldToScreen(
-          other.x,
-          other.y
-        );
+  ctx.save();
 
-      const dx =
-        p.x - q.x;
-
-      const dy =
-        p.y - q.y;
-
-      const distance =
-        Math.sqrt(
-          dx * dx +
-          dy * dy
-        );
-
-      return (
-        distance <=
-        OVERLAP_RADIUS
-      );
-    }
-  );
-}
-
-
-function getShotColor(shot) {
-
-  const group =
-    getOverlapGroup(
-      shot
-    );
-
-  if (group.length <= 1) {
-
-    return "#e53935";
-  }
-
-  const index =
-    group.indexOf(
-      shot
-    );
-
-  return shotColors[
-    index %
-    shotColors.length
-  ];
-}
-
-
-/* =========================
-   コメント済み判定
-========================= */
-
-function hasComment(shot) {
-
-  return (
-    typeof shot.comment ===
-      "string" &&
-    shot.comment.trim() !== ""
-  );
-}
-
-
-/* =========================
-   コメントマーク
-========================= */
-
-function drawCommentMark(p) {
-
-  const x =
-    p.x + 9;
-
-  const y =
-    p.y - 9;
+  /*
+    的の外側
+  */
 
   ctx.beginPath();
-
   ctx.arc(
-    x,
-    y,
-    3,
+    p.x,
+    p.y,
+    r,
     0,
     Math.PI * 2
   );
 
-  ctx.fillStyle =
-    "#ffffff";
+  ctx.fillStyle = "#f7f2df";
+  ctx.fill();
+
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.stroke();
+
+
+  /*
+    的の黒円
+  */
+
+  ctx.beginPath();
+  ctx.arc(
+    p.x,
+    p.y,
+    r * 0.5,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "#111";
+  ctx.fill();
+
+
+  /*
+    中心
+  */
+
+  ctx.beginPath();
+  ctx.arc(
+    p.x,
+    p.y,
+    r * 0.15,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "#111";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+
+/* =========================================================
+   背景のワールド座標描画
+   ========================================================= */
+
+function drawWorldBand(y1, y2, color) {
+
+  /*
+    Canvas画面の左右端に対応する
+    ワールド座標を求める。
+
+    これによって背景も的と同じ
+    ワールド座標系に入る。
+  */
+
+  const left = screenToWorld(0, 0);
+  const right = screenToWorld(W, 0);
+
+  const p1 = worldToScreen(left.x, y1);
+  const p2 = worldToScreen(right.x, y1);
+
+  const p3 = worldToScreen(right.x, y2);
+  const p4 = worldToScreen(left.x, y2);
+
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.lineTo(p3.x, p3.y);
+  ctx.lineTo(p4.x, p4.y);
+
+  ctx.closePath();
 
   ctx.fill();
 }
 
 
-/* =========================
+/* =========================================================
+   背景
+   ========================================================= */
+
+function drawBackground() {
+
+  /*
+    まず全体を安土色にする。
+  */
+
+  ctx.fillStyle = "#b99668";
+  ctx.fillRect(0, 0, W, H);
+
+
+  /*
+    紺色の幕
+
+    世界座標で
+
+      -∞ ～ CURTAIN_Y
+
+    の領域。
+  */
+
+  drawWorldBand(
+    -100000,
+    CURTAIN_Y,
+    "#142f55"
+  );
+
+
+  /*
+    安土
+
+    AZUCHI_TOPより下。
+  */
+
+  drawWorldBand(
+    AZUCHI_TOP,
+    100000,
+    "#b99668"
+  );
+
+
+  /*
+    地面の境界線
+  */
+
+  const leftWorld = screenToWorld(0, 0);
+  const rightWorld = screenToWorld(W, 0);
+
+  const groundLeft =
+    worldToScreen(leftWorld.x, GROUND_Y);
+
+  const groundRight =
+    worldToScreen(rightWorld.x, GROUND_Y);
+
+  ctx.strokeStyle = "#705335";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    groundLeft.x,
+    groundLeft.y
+  );
+
+  ctx.lineTo(
+    groundRight.x,
+    groundRight.y
+  );
+
+  ctx.stroke();
+
+
+  /*
+    的と的の間の点線
+
+      -900
+      +900
+
+    をワールド座標として描く。
+
+    これも #app の -90° 回転に
+    一緒についてくる。
+  */
+
+  ctx.strokeStyle =
+    "rgba(255,255,255,0.55)";
+
+  ctx.lineWidth = 1;
+
+  ctx.setLineDash([4, 5]);
+
+  for (const y of [-900, 900]) {
+
+    const p1 =
+      worldToScreen(leftWorld.x, y);
+
+    const p2 =
+      worldToScreen(rightWorld.x, y);
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      p1.x,
+      p1.y
+    );
+
+    ctx.lineTo(
+      p2.x,
+      p2.y
+    );
+
+    ctx.stroke();
+  }
+
+  ctx.setLineDash([]);
+}
+
+
+/* =========================================================
+   矢
+   ========================================================= */
+
+function drawShot(shot, index) {
+
+  const p = worldToScreen(
+    shot.x,
+    shot.y
+  );
+
+  const r =
+    SHOT_RADIUS *
+    Math.max(0.7, Math.min(scale, 2));
+
+  ctx.save();
+
+
+  /*
+    選択中の矢
+  */
+
+  if (index === selectedShotIndex) {
+
+    ctx.beginPath();
+
+    ctx.arc(
+      p.x,
+      p.y,
+      r + 5,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fillStyle =
+      "rgba(255,215,0,0.35)";
+
+    ctx.fill();
+  }
+
+
+  /*
+    矢の点
+  */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    p.x,
+    p.y,
+    r,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "#d62828";
+
+  ctx.fill();
+
+  ctx.strokeStyle = "#fff";
+
+  ctx.lineWidth = 1;
+
+  ctx.stroke();
+
+
+  /*
+    矢番号
+  */
+
+  ctx.fillStyle = "#fff";
+
+  ctx.font =
+    `bold ${Math.max(10, r * 1.6)}px sans-serif`;
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(
+    shot.number,
+    p.x,
+    p.y
+  );
+
+  ctx.restore();
+}
+
+
+/* =========================================================
    描画
-========================= */
+   ========================================================= */
 
 function draw() {
+
+  if (!W || !H) return;
 
   ctx.clearRect(
     0,
@@ -1036,170 +881,28 @@ function draw() {
 
 
   /*
-    安土色
+    背景
   */
 
-  ctx.fillStyle =
-    "#b99668";
-
-  ctx.fillRect(
-    0,
-    0,
-    W,
-    H
-  );
+  drawBackground();
 
 
   /*
-    紺色の幕
-  */
-
-  const curtain =
-    worldToScreen(
-      0,
-      CURTAIN_Y
-    );
-
-  ctx.fillStyle =
-    "#142f55";
-
-  ctx.fillRect(
-    0,
-    0,
-    W,
-    curtain.y
-  );
-
-
-  /*
-    安土
-  */
-
-  const azuchiTop =
-    worldToScreen(
-      0,
-      AZUCHI_TOP
-    );
-
-  ctx.fillStyle =
-    "#b99668";
-
-  ctx.fillRect(
-    0,
-    azuchiTop.y,
-    W,
-    H - azuchiTop.y
-  );
-
-
-  /*
-    地面ライン
-  */
-
-  const ground =
-    worldToScreen(
-      0,
-      GROUND_Y
-    );
-
-  ctx.strokeStyle =
-    "#705335";
-
-  ctx.lineWidth = 2;
-
-  ctx.beginPath();
-
-  ctx.moveTo(
-    0,
-    ground.y
-  );
-
-  ctx.lineTo(
-    W,
-    ground.y
-  );
-
-  ctx.stroke();
-
-
-  /*
-    的間の中央線
-  */
-
-  ctx.strokeStyle =
-    "rgba(255,255,255,0.55)";
-
-  ctx.lineWidth = 1;
-
-  ctx.setLineDash([
-    4,
-    5
-  ]);
-
-
-  /*
-    今回は的が縦に並ぶので、
-    境界線も横方向。
-  */
-
-  for (const y of [-900, 900]) {
-
-    const p =
-      worldToScreen(
-        0,
-        y
-      );
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      0,
-      p.y
-    );
-
-    ctx.lineTo(
-      W,
-      p.y
-    );
-
-    ctx.stroke();
-  }
-
-  ctx.setLineDash([]);
-
-
-  /*
-    =========================
     的
 
-    内部座標では
+    内部座標では縦に3枚並べる。
 
-      上   → 右的
-      中   → 中央的
-      下   → 左的
+    #appが -90° 回転するため、
+    実際のiPhone画面では
 
-    これを -90° 回転することで
-
-      左 → 中央 → 右
+      左 ─ 中央 ─ 右
 
     になる。
-    =========================
   */
 
-  drawKasumi(
-    0,
-    1800
-  );
-
-  drawKasumi(
-    0,
-    0
-  );
-
-  drawKasumi(
-    0,
-    -1800
-  );
+  drawKasumi(0, 1800);
+  drawKasumi(0, 0);
+  drawKasumi(0, -1800);
 
 
   /*
@@ -1207,1088 +910,451 @@ function draw() {
   */
 
   shots.forEach(
-    shot => {
-
-      const p =
-        worldToScreen(
-          shot.x,
-          shot.y
-        );
-
-
-      /*
-        選択中
-      */
-
-      if (
-        selectedShots.has(
-          shot
-        )
-      ) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-          p.x,
-          p.y,
-          SHOT_RADIUS + 5,
-          0,
-          Math.PI * 2
-        );
-
-        ctx.fillStyle =
-          "#ffffff";
-
-        ctx.fill();
-      }
-
-
-      /*
-        矢本体
-      */
-
-      ctx.beginPath();
-
-      ctx.arc(
-        p.x,
-        p.y,
-        SHOT_RADIUS,
-        0,
-        Math.PI * 2
-      );
-
-      ctx.fillStyle =
-        getShotColor(
-          shot
-        );
-
-      ctx.fill();
-
-
-      /*
-        番号
-      */
-
-      ctx.fillStyle =
-        "#ffffff";
-
-      ctx.font =
-        "bold 10px sans-serif";
-
-      ctx.textAlign =
-        "center";
-
-      ctx.textBaseline =
-        "middle";
-
-      ctx.fillText(
-        shot.number,
-        p.x,
-        p.y + 0.5
-      );
-
-
-      /*
-        コメントマーク
-      */
-
-      if (
-        hasComment(shot)
-      ) {
-
-        drawCommentMark(
-          p
-        );
-      }
-
+    (shot, index) => {
+      drawShot(shot, index);
     }
   );
-
-
-  /*
-    選択UI
-  */
-
-  if (selectionMode) {
-
-    selectionInfo.style.display =
-      "block";
-
-    selectionBar.style.display =
-      "flex";
-
-    selectionInfo.textContent =
-      selectedShots.size +
-      "本選択中";
-
-  } else {
-
-    selectionInfo.style.display =
-      "none";
-
-    selectionBar.style.display =
-      "none";
-  }
 }
 
 
-/* =========================
-   矢を探す
-========================= */
+/* =========================================================
+   矢の番号
+   ========================================================= */
 
-function findShot(
-  screenX,
-  screenY
-) {
+function nextShotNumber() {
 
-  for (
-    let i = shots.length - 1;
-    i >= 0;
-    i--
-  ) {
+  if (shots.length === 0) {
+    return 1;
+  }
 
-    const p =
-      worldToScreen(
-        shots[i].x,
-        shots[i].y
-      );
+  return Math.max(
+    ...shots.map(
+      s => Number(s.number) || 0
+    )
+  ) + 1;
+}
 
-    const dx =
-      screenX - p.x;
 
-    const dy =
-      screenY - p.y;
+/* =========================================================
+   タップ位置から既存の矢を探す
+   ========================================================= */
+
+function findShotAt(x, y) {
+
+  const w = screenToWorld(x, y);
+
+  const hitRadius =
+    OVERLAP_RADIUS /
+    (baseScale() * scale);
+
+  let nearest = -1;
+  let nearestDistance = Infinity;
+
+  shots.forEach((shot, index) => {
+
+    const dx = shot.x - w.x;
+    const dy = shot.y - w.y;
 
     const distance =
-      Math.sqrt(
-        dx * dx +
-        dy * dy
-      );
+      Math.sqrt(dx * dx + dy * dy);
 
     if (
-      distance <= 16
+      distance <= hitRadius &&
+      distance < nearestDistance
     ) {
-
-      return shots[i];
+      nearest = index;
+      nearestDistance = distance;
     }
-  }
-
-  return null;
-}
-
-
-/* =========================
-   重なった矢を探す
-========================= */
-
-function findOverlappingShots(
-  screenX,
-  screenY
-) {
-
-  const result = [];
-
-  for (
-    const shot of shots
-  ) {
-
-    const p =
-      worldToScreen(
-        shot.x,
-        shot.y
-      );
-
-    const dx =
-      screenX - p.x;
-
-    const dy =
-      screenY - p.y;
-
-    const distance =
-      Math.sqrt(
-        dx * dx +
-        dy * dy
-      );
-
-    if (
-      distance <= 16
-    ) {
-
-      result.push(
-        shot
-      );
-    }
-  }
-
-  return result;
-}
-
-
-/* =========================
-   矢を追加
-========================= */
-
-function addShot(
-  screenX,
-  screenY
-) {
-
-  if (isPinching) {
-
-    return;
-  }
-
-  const p =
-    screenToWorld(
-      screenX,
-      screenY
-    );
-
-
-  if (
-    p.x < RECORD_LEFT ||
-    p.x > RECORD_RIGHT ||
-    p.y < RECORD_TOP ||
-    p.y > RECORD_BOTTOM
-  ) {
-
-    return;
-  }
-
-
-  shots.push({
-
-    x: p.x,
-
-    y: p.y,
-
-    number:
-      getNextShotNumber(),
-
-    comment: ""
   });
 
+  return nearest;
+}
 
-  saveShots();
+
+/* =========================================================
+   矢を追加
+   ========================================================= */
+
+function addShot(x, y) {
+
+  /*
+    ピンチ操作中は絶対に追加しない。
+  */
+
+  if (isPinching) {
+    return;
+  }
+
+  const w = screenToWorld(x, y);
+
+  const shot = {
+    x: w.x,
+    y: w.y,
+    number: nextShotNumber(),
+    comment: ""
+  };
+
+  shots.push(shot);
+
+  selectedShotIndex =
+    shots.length - 1;
+
+  saveData();
+
+  updateSelection();
 
   draw();
 }
 
 
-/* =========================
-   編集画面
-========================= */
+/* =========================================================
+   矢を選択
+   ========================================================= */
 
-function openEditShot(shot) {
+function selectShot(index) {
 
-  editingShot =
-    shot;
-
-  editNumber.value =
-    shot.number;
-
-  editComment.value =
-    shot.comment || "";
-
-  editModal.style.display =
-    "flex";
-
-  setTimeout(
-    () => {
-
-      editComment.focus();
-
-    },
-    50
-  );
-}
-
-
-function closeEditModal() {
-
-  editingShot =
-    null;
-
-  editModal.style.display =
-    "none";
-}
-
-
-/* =========================
-   編集：保存
-========================= */
-
-editSave.addEventListener(
-  "click",
-  () => {
-
-    if (!editingShot) {
-
-      return;
-    }
-
-
-    let number =
-      Number(
-        editNumber.value
-      );
-
-
-    if (
-      !Number.isFinite(number) ||
-      number < 1
-    ) {
-
-      alert(
-        "1以上の番号を入力してください。"
-      );
-
-      return;
-    }
-
-
-    number =
-      Math.floor(number);
-
-
-    const oldNumber =
-      Number(
-        editingShot.number
-      );
-
-
-    number =
-      Math.min(
-        number,
-        shots.length
-      );
-
-
-    if (
-      number < oldNumber
-    ) {
-
-      for (
-        const shot of shots
-      ) {
-
-        if (
-          shot === editingShot
-        ) {
-
-          continue;
-        }
-
-
-        const n =
-          Number(
-            shot.number
-          );
-
-
-        if (
-          n >= number &&
-          n < oldNumber
-        ) {
-
-          shot.number =
-            n + 1;
-        }
-      }
-
-    } else if (
-      number > oldNumber
-    ) {
-
-      for (
-        const shot of shots
-      ) {
-
-        if (
-          shot === editingShot
-        ) {
-
-          continue;
-        }
-
-
-        const n =
-          Number(
-            shot.number
-          );
-
-
-        if (
-          n > oldNumber &&
-          n <= number
-        ) {
-
-          shot.number =
-            n - 1;
-        }
-      }
-    }
-
-
-    editingShot.number =
-      number;
-
-    editingShot.comment =
-      editComment.value;
-
-
-    saveShots();
-
-    closeEditModal();
-
-    draw();
+  if (
+    index < 0 ||
+    index >= shots.length
+  ) {
+    return;
   }
-);
+
+  selectedShotIndex = index;
+
+  updateSelection();
+
+  draw();
+
+  /*
+    コメント入力
+  */
+
+  commentInput.value =
+    shots[index].comment || "";
+
+  modal.style.display = "flex";
+}
 
 
-/* =========================
-   編集：削除
-========================= */
+/* =========================================================
+   選択表示
+   ========================================================= */
 
-editDelete.addEventListener(
-  "click",
-  () => {
+function updateSelection() {
 
-    if (!editingShot) {
+  if (
+    selectedShotIndex < 0 ||
+    selectedShotIndex >= shots.length
+  ) {
 
-      return;
-    }
+    selection.style.display = "none";
 
+    return;
+  }
 
-    const ok =
-      confirm(
-        editingShot.number +
-        "本目の矢を削除しますか？"
-      );
+  const shot =
+    shots[selectedShotIndex];
 
+  selection.textContent =
+    `矢 ${shot.number}`;
 
-    if (!ok) {
-
-      return;
-    }
-
-
-    const deletedNumber =
-      Number(
-        editingShot.number
-      );
+  selection.style.display = "block";
+}
 
 
-    const index =
-      shots.indexOf(
-        editingShot
-      );
+/* =========================================================
+   モーダルを閉じる
+   ========================================================= */
+
+function closeModal() {
+
+  modal.style.display = "none";
+
+  selectedShotIndex = -1;
+
+  updateSelection();
+
+  draw();
+}
 
 
-    if (index !== -1) {
+/* =========================================================
+   タップ処理
+   ========================================================= */
 
-      shots.splice(
-        index,
-        1
-      );
-    }
+function handleTap(clientX, clientY) {
 
+  if (isPinching) {
+    return;
+  }
 
-    for (
-      const shot of shots
-    ) {
-
-      const n =
-        Number(
-          shot.number
-        );
-
-      if (
-        n > deletedNumber
-      ) {
-
-        shot.number =
-          n - 1;
-      }
-    }
-
-
-    selectedShots.delete(
-      editingShot
+  const p =
+    physicalToCanvas(
+      clientX,
+      clientY
     );
 
+  /*
+    既存の矢をタップした場合
+  */
 
-    saveShots();
+  const existing =
+    findShotAt(
+      p.x,
+      p.y
+    );
 
-    closeEditModal();
+  if (existing >= 0) {
 
-    draw();
+    selectShot(existing);
+
+    return;
   }
-);
 
 
-/* =========================
-   編集：キャンセル
-========================= */
+  /*
+    新しい矢
+  */
 
-editCancel.addEventListener(
-  "click",
-  () => {
-
-    closeEditModal();
-  }
-);
-
-
-editModal.addEventListener(
-  "click",
-  e => {
-
-    if (
-      e.target === editModal
-    ) {
-
-      closeEditModal();
-    }
-  }
-);
-
-
-/* =========================
-   ポインター操作
-========================= */
-
-let draggingShot = null;
-
-let dragOffsetX = 0;
-
-let dragOffsetY = 0;
-
-let pointerStartX = 0;
-
-let pointerStartY = 0;
-
-let moved = false;
-
-let tapTimer = null;
-
-let lastTapShot = null;
-
-
-/*
-  実画面のタッチ座標を
-  回転前の内部キャンバス座標へ変換。
-*/
-
-function getCanvasPoint(e) {
-
-  return physicalToCanvas(
-    e.clientX,
-    e.clientY
+  addShot(
+    p.x,
+    p.y
   );
 }
 
 
-/* =========================
-   pointerdown
-========================= */
+/* =========================================================
+   Pointer Events
+   ========================================================= */
 
 canvas.addEventListener(
   "pointerdown",
-  e => {
-
-    e.preventDefault();
-
+  function(e) {
 
     /*
-      2本目の指
+      2本指になったら
+      シングルタップ予約をキャンセル
     */
 
     if (
-      e.pointerType === "touch" &&
-      e.isPrimary === false
+      e.pointerType === "touch"
     ) {
 
-      clearTimeout(
-        tapTimer
-      );
-
-      tapTimer = null;
-
-      lastTapShot = null;
-
-      draggingShot = null;
-
-      moved = false;
-
-      isPinching = true;
-
-      return;
-    }
-
-
-    if (isPinching) {
-
-      return;
-    }
-
-
-    const point =
-      getCanvasPoint(e);
-
-    const x =
-      point.x;
-
-    const y =
-      point.y;
-
-
-    pointerStartX =
-      x;
-
-    pointerStartY =
-      y;
-
-    moved = false;
-
-
-    /*
-      選択モード
-    */
-
-    if (selectionMode) {
-
-      const candidates =
-        findOverlappingShots(
-          x,
-          y
+      const activeTouches =
+        Array.from(
+          activePointers.values()
         );
 
-
-      if (
-        candidates.length === 0
-      ) {
-
-        return;
-      }
-
-
-      const samePosition =
-        lastSelectionX !== null &&
-        Math.abs(
-          x -
-          lastSelectionX
-        ) < 16 &&
-        Math.abs(
-          y -
-          lastSelectionY
-        ) < 16;
-
-
-      if (!samePosition) {
-
-        selectionCycle =
-          candidates;
-
-        selectionCycleIndex =
-          0;
-
-      } else {
-
-        selectionCycleIndex++;
-
-        if (
-          selectionCycleIndex >=
-          selectionCycle.length
-        ) {
-
-          selectionCycleIndex =
-            0;
+      activePointers.set(
+        e.pointerId,
+        {
+          x: e.clientX,
+          y: e.clientY
         }
-      }
-
-
-      const shot =
-        selectionCycle[
-          selectionCycleIndex
-        ];
-
-
-      if (
-        selectedShots.has(
-          shot
-        )
-      ) {
-
-        selectedShots.delete(
-          shot
-        );
-
-      } else {
-
-        selectedShots.add(
-          shot
-        );
-      }
-
-
-      lastSelectionX =
-        x;
-
-      lastSelectionY =
-        y;
-
-
-      draw();
-
-      return;
-    }
-
-
-    /*
-      通常モード
-    */
-
-    const shot =
-      findShot(
-        x,
-        y
       );
 
-
-    /*
-      既存の矢
-    */
-
-    if (shot) {
-
-      draggingShot =
-        shot;
-
-
-      const p =
-        worldToScreen(
-          shot.x,
-          shot.y
-        );
-
-
-      dragOffsetX =
-        p.x - x;
-
-      dragOffsetY =
-        p.y - y;
-
-
-      /*
-        ダブルタップ
-      */
-
       if (
-        lastTapShot === shot
+        activePointers.size >= 2
       ) {
 
-        clearTimeout(
-          tapTimer
-        );
+        if (tapTimer) {
 
-        tapTimer = null;
+          clearTimeout(tapTimer);
+          tapTimer = null;
+        }
 
-        lastTapShot = null;
-
-        draggingShot = null;
-
-        openEditShot(
-          shot
-        );
+        startPinch();
 
         return;
       }
 
+    } else {
 
-      lastTapShot =
-        shot;
+      activePointers.set(
+        e.pointerId,
+        {
+          x: e.clientX,
+          y: e.clientY
+        }
+      );
+    }
 
+    /*
+      マウス・1本指のタップ
+    */
 
-      tapTimer =
-        setTimeout(
-          () => {
+    if (
+      activePointers.size === 1 &&
+      e.pointerType !== "touch"
+    ) {
 
-            if (isPinching) {
+      if (tapTimer) {
+        clearTimeout(tapTimer);
+      }
 
-              lastTapShot =
-                null;
+      tapTimer = setTimeout(
+        () => {
 
-              return;
-            }
+          tapTimer = null;
 
+          if (!isPinching) {
 
-            addShot(
-              x,
-              y
+            handleTap(
+              e.clientX,
+              e.clientY
             );
+          }
 
-
-            lastTapShot =
-              null;
-
-            tapTimer =
-              null;
-
-          },
-          300
-        );
-
-
-      return;
+        },
+        300
+      );
     }
 
 
-    /*
-      空白をタップ
-    */
+    if (
+      activePointers.size === 1 &&
+      e.pointerType === "touch"
+    ) {
 
-    addShot(
-      x,
-      y
-    );
+      if (tapTimer) {
+        clearTimeout(tapTimer);
+      }
 
-  },
-  {
-    passive: false
+      tapTimer = setTimeout(
+        () => {
+
+          tapTimer = null;
+
+          if (
+            !isPinching &&
+            activePointers.size === 1
+          ) {
+
+            handleTap(
+              e.clientX,
+              e.clientY
+            );
+          }
+
+        },
+        300
+      );
+    }
   }
 );
 
 
-/* =========================
-   pointermove
-========================= */
+/* =========================================================
+   Pointer Move
+   ========================================================= */
 
 canvas.addEventListener(
   "pointermove",
-  e => {
-
-    e.preventDefault();
-
-
-    if (isPinching) {
-
-      return;
-    }
-
-
-    if (!draggingShot) {
-
-      return;
-    }
-
-
-    const point =
-      getCanvasPoint(e);
-
-    const x =
-      point.x;
-
-    const y =
-      point.y;
-
-
-    const dx =
-      x - pointerStartX;
-
-    const dy =
-      y - pointerStartY;
-
+  function(e) {
 
     if (
-      Math.abs(dx) > 3 ||
-      Math.abs(dy) > 3
+      activePointers.has(
+        e.pointerId
+      )
     ) {
 
-      moved = true;
+      activePointers.set(
+        e.pointerId,
+        {
+          x: e.clientX,
+          y: e.clientY
+        }
+      );
     }
 
+    /*
+      ピンチ中
+    */
 
-    if (moved) {
+    if (
+      isPinching &&
+      activePointers.size >= 2
+    ) {
 
-      clearTimeout(
-        tapTimer
-      );
+      updatePinch();
 
-      tapTimer = null;
-
-      lastTapShot = null;
+      return;
     }
-
-
-    const p =
-      screenToWorld(
-        x + dragOffsetX,
-        y + dragOffsetY
-      );
-
-
-    p.x =
-      Math.max(
-        RECORD_LEFT,
-        Math.min(
-          RECORD_RIGHT,
-          p.x
-        )
-      );
-
-    p.y =
-      Math.max(
-        RECORD_TOP,
-        Math.min(
-          RECORD_BOTTOM,
-          p.y
-        )
-      );
-
-
-    draggingShot.x =
-      p.x;
-
-    draggingShot.y =
-      p.y;
-
-
-    draw();
-
-  },
-  {
-    passive: false
   }
 );
 
 
-/* =========================
-   pointerup
-========================= */
+/* =========================================================
+   Pointer Up
+   ========================================================= */
+
+function pointerEnd(e) {
+
+  activePointers.delete(
+    e.pointerId
+  );
+
+  if (
+    activePointers.size < 2
+  ) {
+
+    if (isPinching) {
+
+      isPinching = false;
+
+      pinchStartDistance = 0;
+    }
+  }
+}
+
 
 canvas.addEventListener(
   "pointerup",
-  e => {
-
-    e.preventDefault();
-
-
-    if (isPinching) {
-
-      return;
-    }
-
-
-    if (
-      draggingShot &&
-      moved
-    ) {
-
-      saveShots();
-    }
-
-
-    draggingShot =
-      null;
-
-  },
-  {
-    passive: false
-  }
+  pointerEnd
 );
-
-
-/* =========================
-   pointercancel
-========================= */
 
 canvas.addEventListener(
   "pointercancel",
-  () => {
+  pointerEnd
+);
 
-    if (
-      draggingShot &&
-      moved
-    ) {
-
-      saveShots();
-    }
-
-
-    draggingShot =
-      null;
-  }
+canvas.addEventListener(
+  "pointerleave",
+  pointerEnd
 );
 
 
-/* =========================
-   ズーム
-========================= */
+/* =========================================================
+   Active Pointer
+   ========================================================= */
 
-minusButton.addEventListener(
-  "click",
-  () => {
-
-    scale /= 1.2;
-
-    scale =
-      Math.max(
-        MIN_SCALE,
-        scale
-      );
-
-    draw();
-  }
-);
+const activePointers = new Map();
 
 
-plusButton.addEventListener(
-  "click",
-  () => {
+/* =========================================================
+   ピンチ開始
+   ========================================================= */
 
-    scale *= 1.2;
+function getPointerDistance() {
 
-    scale =
-      Math.min(
-        MAX_SCALE,
-        scale
-      );
+  const points =
+    Array.from(
+      activePointers.values()
+    );
 
-    draw();
-  }
-);
-
-
-/* =========================
-   ピンチズーム
-========================= */
-
-function getTouchDistance(e) {
-
-  if (
-    e.touches.length < 2
-  ) {
-
-    return null;
+  if (points.length < 2) {
+    return 0;
   }
 
-
-  const a =
-    e.touches[0];
-
-  const b =
-    e.touches[1];
-
+  const a = points[0];
+  const b = points[1];
 
   const dx =
-    a.clientX -
-    b.clientX;
+    a.x - b.x;
 
   const dy =
-    a.clientY -
-    b.clientY;
-
+    a.y - b.y;
 
   return Math.sqrt(
     dx * dx +
@@ -2297,38 +1363,77 @@ function getTouchDistance(e) {
 }
 
 
-/* =========================
-   2本目の指
-========================= */
+function startPinch() {
+
+  isPinching = true;
+
+  if (tapTimer) {
+
+    clearTimeout(tapTimer);
+    tapTimer = null;
+  }
+
+  pinchStartDistance =
+    getPointerDistance();
+
+  pinchStartScale =
+    scale;
+}
+
+
+/* =========================================================
+   ピンチ更新
+   ========================================================= */
+
+function updatePinch() {
+
+  const distance =
+    getPointerDistance();
+
+  if (
+    !pinchStartDistance ||
+    !distance
+  ) {
+    return;
+  }
+
+  const ratio =
+    distance /
+    pinchStartDistance;
+
+  scale =
+    pinchStartScale * ratio;
+
+  scale =
+    Math.max(
+      MIN_SCALE,
+      Math.min(
+        MAX_SCALE,
+        scale
+      )
+    );
+
+  draw();
+}
+
+
+/* =========================================================
+   タッチ開始時の追加対策
+   ========================================================= */
 
 canvas.addEventListener(
   "touchstart",
-  e => {
+  function(e) {
 
-    if (
-      e.touches.length === 2
-    ) {
+    if (e.touches.length >= 2) {
 
-      clearTimeout(
-        tapTimer
-      );
+      if (tapTimer) {
 
-      tapTimer = null;
-
-      lastTapShot = null;
-
-      draggingShot = null;
-
-      moved = false;
+        clearTimeout(tapTimer);
+        tapTimer = null;
+      }
 
       isPinching = true;
-
-
-      pinchStartDistance =
-        getTouchDistance(e);
-
-      pinchStartScale =
-        scale;
     }
 
   },
@@ -2338,100 +1443,19 @@ canvas.addEventListener(
 );
 
 
-/* =========================
-   ピンチズーム中
-========================= */
-
-canvas.addEventListener(
-  "touchmove",
-  e => {
-
-    if (
-      e.touches.length !== 2
-    ) {
-
-      return;
-    }
-
-
-    e.preventDefault();
-
-    isPinching = true;
-
-
-    const distance =
-      getTouchDistance(e);
-
-
-    if (
-      pinchStartDistance === null ||
-      !distance
-    ) {
-
-      return;
-    }
-
-
-    const ratio =
-      distance /
-      pinchStartDistance;
-
-
-    scale =
-      pinchStartScale *
-      ratio;
-
-
-    scale =
-      Math.max(
-        MIN_SCALE,
-        Math.min(
-          MAX_SCALE,
-          scale
-        )
-      );
-
-
-    draw();
-
-  },
-  {
-    passive: false
-  }
-);
-
-
-/* =========================
-   ピンチ終了
-========================= */
+/* =========================================================
+   タッチ終了時
+   ========================================================= */
 
 canvas.addEventListener(
   "touchend",
-  e => {
+  function(e) {
 
     if (
       e.touches.length < 2
     ) {
 
-      pinchStartDistance =
-        null;
-
-      isPinching =
-        false;
-
-      draggingShot =
-        null;
-
-      moved = false;
-
-
-      clearTimeout(
-        tapTimer
-      );
-
-      tapTimer = null;
-
-      lastTapShot = null;
+      isPinching = false;
     }
 
   },
@@ -2440,34 +1464,18 @@ canvas.addEventListener(
   }
 );
 
-
-/* =========================
-   ピンチキャンセル
-========================= */
 
 canvas.addEventListener(
   "touchcancel",
-  () => {
+  function() {
 
-    pinchStartDistance =
-      null;
+    isPinching = false;
 
-    isPinching =
-      false;
+    if (tapTimer) {
 
-    draggingShot =
-      null;
-
-    moved = false;
-
-
-    clearTimeout(
-      tapTimer
-    );
-
-    tapTimer = null;
-
-    lastTapShot = null;
+      clearTimeout(tapTimer);
+      tapTimer = null;
+    }
 
   },
   {
@@ -2476,209 +1484,119 @@ canvas.addEventListener(
 );
 
 
-/* =========================
+/* =========================================================
    リセット
-========================= */
+   ========================================================= */
 
-resetButton.addEventListener(
+resetBtn.addEventListener(
   "click",
-  () => {
+  function() {
 
-    const ok =
-      confirm(
-        dateInput.value +
-        " の矢所記録を全部削除しますか？"
-      );
-
-
-    if (!ok) {
-
+    if (
+      !confirm(
+        "この日の記録をすべて削除しますか？"
+      )
+    ) {
       return;
     }
-
 
     shots = [];
 
-    selectedShots.clear();
+    selectedShotIndex = -1;
 
-    selectionMode = false;
+    saveData();
 
-    saveShots();
-
-    draw();
-  }
-);
-
-
-/* =========================
-   選択モード
-========================= */
-
-selectButton.addEventListener(
-  "click",
-  () => {
-
-    selectionMode = true;
-
-    selectedShots.clear();
-
-    selectionCycle = [];
-
-    selectionCycleIndex = 0;
-
-    lastSelectionX = null;
-
-    lastSelectionY = null;
+    updateSelection();
 
     draw();
   }
 );
 
 
-/* =========================
-   選択削除
-========================= */
-
-deleteSelectedButton.addEventListener(
-  "click",
-  () => {
-
-    if (
-      selectedShots.size === 0
-    ) {
-
-      return;
-    }
-
-
-    const ok =
-      confirm(
-        selectedShots.size +
-        "本の矢を削除しますか？"
-      );
-
-
-    if (!ok) {
-
-      return;
-    }
-
-
-    const deletedNumbers =
-      Array.from(
-        selectedShots
-      ).map(
-        shot =>
-          Number(
-            shot.number
-          )
-      );
-
-
-    shots =
-      shots.filter(
-        shot =>
-          !selectedShots.has(
-            shot
-          )
-      );
-
-
-    for (
-      const shot of shots
-    ) {
-
-      const n =
-        Number(
-          shot.number
-        );
-
-
-      const shiftCount =
-        deletedNumbers.filter(
-          deletedNumber =>
-            deletedNumber < n
-        ).length;
-
-
-      shot.number =
-        n - shiftCount;
-    }
-
-
-    selectedShots.clear();
-
-    saveShots();
-
-    draw();
-  }
-);
-
-
-/* =========================
-   選択終了
-========================= */
-
-cancelSelectButton.addEventListener(
-  "click",
-  () => {
-
-    selectionMode = false;
-
-    selectedShots.clear();
-
-    selectionCycle = [];
-
-    selectionCycleIndex = 0;
-
-    lastSelectionX = null;
-
-    lastSelectionY = null;
-
-    draw();
-  }
-);
-
-
-/* =========================
+/* =========================================================
    日付変更
-========================= */
+   ========================================================= */
 
 dateInput.addEventListener(
   "change",
-  () => {
+  function() {
 
-    selectionMode = false;
-
-    selectedShots.clear();
-
-    selectionCycle = [];
-
-    selectionCycleIndex = 0;
-
-    lastSelectionX = null;
-
-    lastSelectionY = null;
-
-    loadShots();
-
-    draw();
+    loadData();
   }
 );
 
 
-/* =========================
-   起動
-========================= */
+/* =========================================================
+   コメント保存
+   ========================================================= */
+
+saveBtn.addEventListener(
+  "click",
+  function() {
+
+    if (
+      selectedShotIndex >= 0 &&
+      selectedShotIndex < shots.length
+    ) {
+
+      shots[
+        selectedShotIndex
+      ].comment =
+        commentInput.value;
+
+      saveData();
+    }
+
+    closeModal();
+  }
+);
+
+
+/* =========================================================
+   コメントキャンセル
+   ========================================================= */
+
+cancelBtn.addEventListener(
+  "click",
+  function() {
+
+    closeModal();
+  }
+);
+
+
+/* =========================================================
+   モーダル外クリック
+   ========================================================= */
+
+modal.addEventListener(
+  "click",
+  function(e) {
+
+    if (e.target === modal) {
+
+      closeModal();
+    }
+  }
+);
+
+
+/* =========================================================
+   初期化
+   ========================================================= */
 
 window.addEventListener(
   "resize",
-  resize
+  function() {
+
+    resizeCanvas();
+  }
 );
 
-loadShots();
 
-resize();
+resizeCanvas();
+
+loadData();
 
 </script>
 
