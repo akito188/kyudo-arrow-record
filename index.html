@@ -1,12 +1,16 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
 <title>弓道 矢所記録</title>
 
 <style>
+
   * {
     box-sizing: border-box;
   }
@@ -175,6 +179,7 @@
   #editButtons button:active {
     opacity: 0.75;
   }
+
 </style>
 </head>
 
@@ -258,8 +263,10 @@ const plusButton = document.getElementById("plus");
 
 const selectionInfo = document.getElementById("selectionInfo");
 const selectionBar = document.getElementById("selectionBar");
+
 const deleteSelectedButton =
   document.getElementById("deleteSelected");
+
 const cancelSelectButton =
   document.getElementById("cancelSelect");
 
@@ -313,6 +320,7 @@ const RECORD_RIGHT = 1800;
 
 const SHOT_RADIUS = 9;
 
+
 /*
   同じ半径9pxの円について、
   「円の面積が約80%以上重なっている」
@@ -350,7 +358,17 @@ let scale = 1;
 const MIN_SCALE = 0.4;
 const MAX_SCALE = 4;
 
-let centerY = -300;
+
+/*
+  横画面専用。
+
+  0にすることで、
+  3つの的の中心を画面中央の高さに配置する。
+
+  描画倍率には一切影響しない。
+*/
+
+let centerY = 0;
 
 
 /* =========================
@@ -367,6 +385,16 @@ let selectionCycleIndex = 0;
 
 let lastSelectionX = null;
 let lastSelectionY = null;
+
+
+/* =========================
+   ピンチ状態
+========================= */
+
+let pinchStartDistance = null;
+let pinchStartScale = 1;
+
+let isPinching = false;
 
 
 /* =========================
@@ -392,6 +420,7 @@ dateInput.value = getTodayString();
 ========================= */
 
 function getStorageKey() {
+
   return "kyudo_" + dateInput.value;
 }
 
@@ -523,6 +552,14 @@ function resize() {
 ========================= */
 
 function baseScale() {
+
+  /*
+    ここは元コードから変更なし。
+
+    横画面時の左右の的の中心が
+    左右端に来る倍率を維持する。
+  */
+
   return W / (TARGET_SPACING * 2);
 }
 
@@ -616,6 +653,7 @@ function drawKasumi(cx, cy) {
       r: 36,
       color: "#f8f6ed"
     }
+
   ];
 
 
@@ -712,11 +750,6 @@ function hasComment(shot) {
 ========================= */
 
 function drawCommentMark(p) {
-
-  /*
-    コメントありを示すだけの
-    小さな白い点
-  */
 
   const x = p.x + 9;
   const y = p.y - 9;
@@ -964,6 +997,7 @@ function draw() {
 
       drawCommentMark(p);
     }
+
   });
 
 
@@ -1088,6 +1122,14 @@ function addShot(
   screenY
 ) {
 
+  /*
+    ピンチ中は絶対に追加しない
+  */
+
+  if (isPinching) {
+    return;
+  }
+
   const p =
     screenToWorld(
       screenX,
@@ -1165,7 +1207,7 @@ function closeEditModal() {
 
 /* =========================
    編集：保存
-   ★ 割り込み方式
+   割り込み方式
 ========================= */
 
 editSave.addEventListener(
@@ -1180,10 +1222,6 @@ editSave.addEventListener(
     let number =
       Number(editNumber.value);
 
-
-    /*
-      不正な番号なら保存しない
-    */
 
     if (
       !Number.isFinite(number) ||
@@ -1206,40 +1244,12 @@ editSave.addEventListener(
       Number(editingShot.number);
 
 
-    /*
-      現在の本数を超える番号を入力した場合は
-      最後の番号として扱う。
-
-      例：
-      5本しかない状態で10を入力
-      → 5番になる。
-    */
-
     number =
       Math.min(
         number,
         shots.length
       );
 
-
-    /*
-      番号を前へ移動する場合
-
-      例：
-      1 2 3 4 5
-          ↑
-        4 → 1
-
-      ↓
-
-      1 2 3 4 5
-      ↑
-      編集対象
-
-      元1 → 2
-      元2 → 3
-      元3 → 4
-    */
 
     if (
       number < oldNumber
@@ -1270,23 +1280,6 @@ editSave.addEventListener(
     }
 
 
-    /*
-      番号を後ろへ移動する場合
-
-      例：
-      1 2 3 4 5
-        ↑
-        2 → 4
-
-      ↓
-
-      1 2 3 4 5
-
-      元3 → 2
-      元4 → 3
-      編集対象 → 4
-    */
-
     else if (
       number > oldNumber
     ) {
@@ -1316,18 +1309,9 @@ editSave.addEventListener(
     }
 
 
-    /*
-      最後に編集対象へ
-      新しい番号を設定
-    */
-
     editingShot.number =
       number;
 
-
-    /*
-      コメント
-    */
 
     editingShot.comment =
       editComment.value;
@@ -1385,11 +1369,6 @@ editDelete.addEventListener(
       );
     }
 
-
-    /*
-      削除した番号より後ろを
-      1つずつ繰り上げる
-    */
 
     for (const shot of shots) {
 
@@ -1476,6 +1455,48 @@ canvas.addEventListener(
   e => {
 
     e.preventDefault();
+
+
+    /*
+      2本目以降のタッチ入力。
+
+      ピンチズーム開始時には、
+      1本目の指で予約されていた
+      「矢を追加」をキャンセルする。
+    */
+
+    if (
+      e.pointerType === "touch" &&
+      e.isPrimary === false
+    ) {
+
+      clearTimeout(
+        tapTimer
+      );
+
+      tapTimer = null;
+
+      lastTapShot = null;
+
+      draggingShot = null;
+
+      moved = false;
+
+      isPinching = true;
+
+      return;
+    }
+
+
+    /*
+      すでにピンチ中なら
+      通常操作を受け付けない。
+    */
+
+    if (isPinching) {
+
+      return;
+    }
 
 
     pointerStartX =
@@ -1622,6 +1643,8 @@ canvas.addEventListener(
           tapTimer
         );
 
+        tapTimer = null;
+
         lastTapShot = null;
 
         draggingShot = null;
@@ -1647,6 +1670,18 @@ canvas.addEventListener(
           () => {
 
             /*
+              ピンチ中なら追加しない
+            */
+
+            if (isPinching) {
+
+              lastTapShot = null;
+
+              return;
+            }
+
+
+            /*
               1回のタップなら
               同じ場所に新しい矢を追加
             */
@@ -1658,6 +1693,8 @@ canvas.addEventListener(
 
             lastTapShot =
               null;
+
+            tapTimer = null;
 
           },
           300
@@ -1676,6 +1713,7 @@ canvas.addEventListener(
       e.clientX,
       e.clientY
     );
+
   },
   {
     passive: false
@@ -1692,6 +1730,16 @@ canvas.addEventListener(
   e => {
 
     e.preventDefault();
+
+
+    /*
+      ピンチ中は
+      矢を動かさない。
+    */
+
+    if (isPinching) {
+      return;
+    }
 
 
     if (!draggingShot) {
@@ -1728,8 +1776,9 @@ canvas.addEventListener(
         tapTimer
       );
 
-      lastTapShot =
-        null;
+      tapTimer = null;
+
+      lastTapShot = null;
     }
 
 
@@ -1774,6 +1823,7 @@ canvas.addEventListener(
 
 
     draw();
+
   },
   {
     passive: false
@@ -1792,6 +1842,17 @@ canvas.addEventListener(
     e.preventDefault();
 
 
+    /*
+      ピンチ中に離した指は
+      通常の操作として扱わない。
+    */
+
+    if (isPinching) {
+
+      return;
+    }
+
+
     if (
       draggingShot &&
       moved
@@ -1803,6 +1864,7 @@ canvas.addEventListener(
 
     draggingShot =
       null;
+
   },
   {
     passive: false
@@ -1875,10 +1937,6 @@ plusButton.addEventListener(
    ピンチズーム
 ========================= */
 
-let pinchStartDistance = null;
-let pinchStartScale = 1;
-
-
 function getTouchDistance(e) {
 
   if (
@@ -1912,6 +1970,11 @@ function getTouchDistance(e) {
 }
 
 
+/*
+  2本目の指が触れた瞬間に
+  タップ予約をキャンセルする。
+*/
+
 canvas.addEventListener(
   "touchstart",
   e => {
@@ -1920,18 +1983,38 @@ canvas.addEventListener(
       e.touches.length === 2
     ) {
 
+      clearTimeout(
+        tapTimer
+      );
+
+      tapTimer = null;
+
+      lastTapShot = null;
+
+      draggingShot = null;
+
+      moved = false;
+
+      isPinching = true;
+
+
       pinchStartDistance =
         getTouchDistance(e);
 
       pinchStartScale =
         scale;
     }
+
   },
   {
     passive: false
   }
 );
 
+
+/*
+  ピンチズーム中
+*/
 
 canvas.addEventListener(
   "touchmove",
@@ -1946,6 +2029,9 @@ canvas.addEventListener(
 
 
     e.preventDefault();
+
+
+    isPinching = true;
 
 
     const distance =
@@ -1982,12 +2068,17 @@ canvas.addEventListener(
 
 
     draw();
+
   },
   {
     passive: false
   }
 );
 
+
+/*
+  ピンチ終了
+*/
 
 canvas.addEventListener(
   "touchend",
@@ -1997,9 +2088,53 @@ canvas.addEventListener(
       e.touches.length < 2
     ) {
 
-      pinchStartDistance =
-        null;
+      pinchStartDistance = null;
+
+      isPinching = false;
+
+      draggingShot = null;
+
+      moved = false;
+
+      clearTimeout(
+        tapTimer
+      );
+
+      tapTimer = null;
+
+      lastTapShot = null;
     }
+
+  },
+  {
+    passive: false
+  }
+);
+
+
+/*
+  ピンチがキャンセルされた場合
+*/
+
+canvas.addEventListener(
+  "touchcancel",
+  () => {
+
+    pinchStartDistance = null;
+
+    isPinching = false;
+
+    draggingShot = null;
+
+    moved = false;
+
+    clearTimeout(
+      tapTimer
+    );
+
+    tapTimer = null;
+
+    lastTapShot = null;
   },
   {
     passive: false
@@ -2211,4 +2346,3 @@ resize();
 
 </body>
 </html>
-```
