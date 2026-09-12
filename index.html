@@ -25,62 +25,6 @@
     touch-action: none;
   }
 
-  /*
-    =====================================================
-    回転用ラッパー
-
-    スマホを横向きにしても回転ロックがONの場合、
-    ブラウザ上では縦長の画面として扱われる。
-
-    そこで中身だけを−90度回転させる。
-    =====================================================
-  */
-
-  #app {
-    position: absolute;
-
-    /*
-      回転前は「横画面」を仮想的に作る。
-      portrait時：
-        width  = 画面の高さ
-        height = 画面の幅
-    */
-
-    width: 100vh;
-    height: 100vw;
-
-    left: 50%;
-    top: 50%;
-
-    transform:
-      translate(-50%, -50%)
-      rotate(-90deg);
-
-    transform-origin: center center;
-
-    overflow: hidden;
-  }
-
-
-  /*
-    通常の横長画面では回転しない。
-
-    PCブラウザなどでは元の表示のまま。
-  */
-
-  @media (orientation: landscape) {
-
-    #app {
-      width: 100vw;
-      height: 100vh;
-
-      transform:
-        translate(-50%, -50%);
-    }
-
-  }
-
-
   canvas {
     display: block;
     width: 100%;
@@ -241,8 +185,6 @@
 
 <body>
 
-<div id="app">
-
 <canvas id="canvas"></canvas>
 
 <div id="dateBox">
@@ -306,8 +248,6 @@
 
 </div>
 
-</div>
-
 
 <script>
 
@@ -337,6 +277,9 @@ const cancelSelectButton =
 
 const editModal =
   document.getElementById("editModal");
+
+const editPanel =
+  document.getElementById("editPanel");
 
 const editNumber =
   document.getElementById("editNumber");
@@ -385,9 +328,6 @@ const SHOT_RADIUS = 9;
   同じ半径9pxの円について、
   「円の面積が約80%以上重なっている」
   とみなす中心間距離。
-
-  約5.4px以下なら
-  重なった矢として扱う。
 */
 
 const OVERLAP_RADIUS = 5.4;
@@ -420,12 +360,7 @@ const MAX_SCALE = 4;
 
 
 /*
-  横画面専用。
-
-  0にすることで、
-  3つの的の中心を画面中央の高さに配置する。
-
-  描画倍率には一切影響しない。
+  元の横画面のワールド座標。
 */
 
 let centerY = 0;
@@ -573,21 +508,45 @@ let dpr = 1;
 
 
 /*
-  ここが−90度対応の重要部分。
+  実際の画面サイズ。
 
-  portrait時は、
+  横画面なら
+    W = 横
+    H = 縦
 
-    ブラウザの実画面
-      W = window.innerHeight
-      H = window.innerWidth
+  回転ロックされたスマホを横向きに持つ場合は
+    W = 縦
+    H = 横
 
-  として扱う。
-
-  つまりキャンバス内部では最初から
-  「横画面」として描画する。
-
-  そのキャンバス全体をCSSで−90度回転する。
+  そこで、アプリ内部では常に
+  「横画面」を論理座標として扱う。
 */
+
+function isPortraitViewport() {
+
+  return W < H;
+}
+
+
+function logicalWidth() {
+
+  if (isPortraitViewport()) {
+    return H;
+  }
+
+  return W;
+}
+
+
+function logicalHeight() {
+
+  if (isPortraitViewport()) {
+    return W;
+  }
+
+  return H;
+}
+
 
 function resize() {
 
@@ -597,38 +556,14 @@ function resize() {
       2
     );
 
-
-  const isPortrait =
-    window.innerWidth <
-    window.innerHeight;
-
-
-  if (isPortrait) {
-
-    /*
-      回転前の仮想画面
-    */
-
-    W = window.innerHeight;
-    H = window.innerWidth;
-
-  } else {
-
-    /*
-      通常の横画面
-    */
-
-    W = window.innerWidth;
-    H = window.innerHeight;
-  }
-
+  W = window.innerWidth;
+  H = window.innerHeight;
 
   canvas.width = W * dpr;
   canvas.height = H * dpr;
 
   canvas.style.width = W + "px";
   canvas.style.height = H + "px";
-
 
   ctx.setTransform(
     dpr,
@@ -639,72 +574,9 @@ function resize() {
     0
   );
 
+  layoutRotatedUI();
 
   draw();
-}
-
-
-/* =========================
-   画面座標 → キャンバス座標
-========================= */
-
-/*
-  スマホがportrait viewportの状態で
-  実際には端末を横向きに持っている場合、
-
-      画面上のX,Y
-
-  と
-
-      回転前キャンバスのX,Y
-
-  は一致しない。
-
-  −90度回転の逆変換をここで行う。
-
-  通常の横画面ではそのまま。
-*/
-
-function getCanvasPoint(clientX, clientY) {
-
-  const isPortrait =
-    window.innerWidth <
-    window.innerHeight;
-
-
-  if (!isPortrait) {
-
-    return {
-      x: clientX,
-      y: clientY
-    };
-
-  }
-
-
-  /*
-    回転前の仮想画面サイズ
-
-      W = 実画面の高さ
-      H = 実画面の幅
-
-    CSSで−90度回転しているため、
-
-      logicalX = H/2 - (screenY - H/2)
-      logicalY = W/2 + (screenX - W/2)
-
-  */
-
-  return {
-
-    x:
-      W / 2 -
-      (clientY - window.innerHeight / 2),
-
-    y:
-      H / 2 +
-      (clientX - window.innerWidth / 2)
-  };
 }
 
 
@@ -714,45 +586,245 @@ function getCanvasPoint(clientX, clientY) {
 
 function baseScale() {
 
-  return W /
+  /*
+    元の横画面の幅を使用。
+
+    つまり回転ロック中でも、
+    「横向きにしたときの画面幅」
+    を基準にする。
+  */
+
+  return logicalWidth() /
     (TARGET_SPACING * 2);
 }
 
 
 /* =========================
-   座標変換
+   −90°座標変換
 ========================= */
 
-function worldToScreen(x, y) {
+/*
+  論理的な横画面座標
+      x → 右
+      y → 下
+
+  を、実際の画面上へ −90°回転して配置する。
+
+  −90°回転なので
+
+      physicalX = logicalY
+      physicalY = logicalWidth - logicalX
+
+  となる。
+
+  横画面そのもののときは
+  回転不要なのでそのまま。
+*/
+
+function logicalToPhysical(x, y) {
+
+  if (!isPortraitViewport()) {
+
+    return {
+      x: x,
+      y: y
+    };
+  }
 
   return {
-
-    x:
-      W / 2 +
-      x * baseScale() * scale,
-
-    y:
-      H / 2 +
-      (y - centerY) *
-      baseScale() *
-      scale
+    x: y,
+    y: logicalWidth() - x
   };
 }
 
 
-function screenToWorld(x, y) {
+/*
+  画面座標 → 論理的な横画面座標
+*/
+
+function physicalToLogical(x, y) {
+
+  if (!isPortraitViewport()) {
+
+    return {
+      x: x,
+      y: y
+    };
+  }
+
+  return {
+    x: logicalWidth() - y,
+    y: x
+  };
+}
+
+
+/* =========================
+   ワールド → 論理画面
+========================= */
+
+function worldToLogicalScreen(x, y) {
+
+  const s =
+    baseScale() * scale;
 
   return {
 
     x:
-      (x - W / 2) /
-      (baseScale() * scale),
+      logicalWidth() / 2 +
+      x * s,
 
     y:
-      (y - H / 2) /
-      (baseScale() * scale) +
+      logicalHeight() / 2 +
+      (y - centerY) * s
+  };
+}
+
+
+/* =========================
+   ワールド → 実画面
+========================= */
+
+function worldToScreen(x, y) {
+
+  const logical =
+    worldToLogicalScreen(x, y);
+
+  return logicalToPhysical(
+    logical.x,
+    logical.y
+  );
+}
+
+
+/* =========================
+   実画面 → ワールド
+========================= */
+
+function screenToWorld(x, y) {
+
+  const logical =
+    physicalToLogical(x, y);
+
+  const s =
+    baseScale() * scale;
+
+  return {
+
+    x:
+      (logical.x -
+        logicalWidth() / 2) / s,
+
+    y:
+      (logical.y -
+        logicalHeight() / 2) / s +
       centerY
   };
+}
+
+
+/* =========================
+   論理画面上の矩形を描く
+========================= */
+
+function fillLogicalRect(
+  x,
+  y,
+  width,
+  height,
+  color
+) {
+
+  const p1 =
+    logicalToPhysical(
+      x,
+      y
+    );
+
+  const p2 =
+    logicalToPhysical(
+      x + width,
+      y
+    );
+
+  const p3 =
+    logicalToPhysical(
+      x + width,
+      y + height
+    );
+
+  const p4 =
+    logicalToPhysical(
+      x,
+      y + height
+    );
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    p1.x,
+    p1.y
+  );
+
+  ctx.lineTo(
+    p2.x,
+    p2.y
+  );
+
+  ctx.lineTo(
+    p3.x,
+    p3.y
+  );
+
+  ctx.lineTo(
+    p4.x,
+    p4.y
+  );
+
+  ctx.closePath();
+
+  ctx.fillStyle = color;
+
+  ctx.fill();
+}
+
+
+/* =========================
+   論理画面上の線を描く
+========================= */
+
+function strokeLogicalLine(
+  x1,
+  y1,
+  x2,
+  y2
+) {
+
+  const p1 =
+    logicalToPhysical(
+      x1,
+      y1
+    );
+
+  const p2 =
+    logicalToPhysical(
+      x2,
+      y2
+    );
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    p1.x,
+    p1.y
+  );
+
+  ctx.lineTo(
+    p2.x,
+    p2.y
+  );
+
+  ctx.stroke();
 }
 
 
@@ -765,16 +837,11 @@ function drawKasumi(cx, cy) {
   const s =
     baseScale() * scale;
 
-  const center = {
-
-    x:
-      W / 2 +
-      cx * s,
-
-    y:
-      H / 2 +
-      (cy - centerY) * s
-  };
+  const center =
+    worldToScreen(
+      cx,
+      cy
+    );
 
 
   const rings = [
@@ -920,6 +987,7 @@ function drawCommentMark(p) {
   );
 
   ctx.fillStyle = "#ffffff";
+
   ctx.fill();
 }
 
@@ -953,42 +1021,52 @@ function draw() {
 
 
   /*
-    紺色の幕
+    以下は元の横画面座標で計算し、
+    その座標を −90°変換して描く。
   */
 
-  const curtain =
-    worldToScreen(
-      0,
-      CURTAIN_Y
-    );
+  const s =
+    baseScale() * scale;
 
-  ctx.fillStyle = "#142f55";
 
-  ctx.fillRect(
+  /*
+    紺色の幕
+
+    元コードでは
+    y = 0 ～ CURTAIN_Y
+    の領域。
+  */
+
+  const curtainLogicalY =
+    logicalHeight() / 2 +
+    (CURTAIN_Y - centerY) * s;
+
+  fillLogicalRect(
     0,
     0,
-    W,
-    curtain.y
+    logicalWidth(),
+    curtainLogicalY,
+    "#142f55"
   );
 
 
   /*
     安土
+
+    元コードでは
+    AZUCHI_TOP ～ 画面下端。
   */
 
-  const azuchiTop =
-    worldToScreen(
-      0,
-      AZUCHI_TOP
-    );
+  const azuchiLogicalY =
+    logicalHeight() / 2 +
+    (AZUCHI_TOP - centerY) * s;
 
-  ctx.fillStyle = "#b99668";
-
-  ctx.fillRect(
+  fillLogicalRect(
     0,
-    azuchiTop.y,
-    W,
-    H - azuchiTop.y
+    azuchiLogicalY,
+    logicalWidth(),
+    logicalHeight() - azuchiLogicalY,
+    "#b99668"
   );
 
 
@@ -996,28 +1074,19 @@ function draw() {
     地面ライン
   */
 
-  const ground =
-    worldToScreen(
-      0,
-      GROUND_Y
-    );
+  const groundLogicalY =
+    logicalHeight() / 2 +
+    (GROUND_Y - centerY) * s;
 
   ctx.strokeStyle = "#705335";
   ctx.lineWidth = 2;
 
-  ctx.beginPath();
-
-  ctx.moveTo(
+  strokeLogicalLine(
     0,
-    ground.y
+    groundLogicalY,
+    logicalWidth(),
+    groundLogicalY
   );
-
-  ctx.lineTo(
-    W,
-    ground.y
-  );
-
-  ctx.stroke();
 
 
   /*
@@ -1037,25 +1106,16 @@ function draw() {
 
   for (const x of [-900, 900]) {
 
-    const p =
-      worldToScreen(
-        x,
-        0
-      );
+    const logicalX =
+      logicalWidth() / 2 +
+      x * s;
 
-    ctx.beginPath();
-
-    ctx.moveTo(
-      p.x,
-      0
+    strokeLogicalLine(
+      logicalX,
+      0,
+      logicalX,
+      logicalHeight()
     );
-
-    ctx.lineTo(
-      p.x,
-      H
-    );
-
-    ctx.stroke();
   }
 
   ctx.setLineDash([]);
@@ -1100,6 +1160,7 @@ function draw() {
       );
 
       ctx.fillStyle = "#ffffff";
+
       ctx.fill();
     }
 
@@ -1180,6 +1241,213 @@ function draw() {
     selectionBar.style.display =
       "none";
   }
+
+
+  /*
+    UI位置を再計算。
+
+    選択UIは display が変わるため、
+    drawのたびに配置する。
+  */
+
+  layoutRotatedUI();
+}
+
+
+/* =========================
+   回転UI配置
+========================= */
+
+/*
+  DOMのUIも、
+  元の横画面に置いた場合の位置を
+  −90°変換する。
+
+  CSS transformで「アプリ全体」を
+  回しているわけではない。
+
+  各UI要素そのものを
+  −90°向きにするだけ。
+*/
+
+function placeRotatedElement(
+  element,
+  logicalCenterX,
+  logicalCenterY
+) {
+
+  if (!element) {
+    return;
+  }
+
+
+  if (!isPortraitViewport()) {
+
+    element.style.transform = "";
+
+    return;
+  }
+
+
+  /*
+    回転前の要素サイズ
+  */
+
+  const width =
+    element.offsetWidth;
+
+  const height =
+    element.offsetHeight;
+
+
+  /*
+    元の横画面上の中心
+    → 実画面へ −90°
+  */
+
+  const center =
+    logicalToPhysical(
+      logicalCenterX,
+      logicalCenterY
+    );
+
+
+  /*
+    −90°回転すると
+    width と height が入れ替わる。
+  */
+
+  element.style.transform =
+    "translate(-50%, -50%) rotate(-90deg)";
+
+  element.style.left =
+    center.x + "px";
+
+  element.style.top =
+    center.y + "px";
+
+  /*
+    width / height は変えない。
+    transform後の見かけ上の大きさだけが
+    90°回転する。
+  */
+}
+
+
+function layoutRotatedUI() {
+
+  /*
+    横画面では元コードそのまま。
+  */
+
+  if (!isPortraitViewport()) {
+
+    dateBox.style.transform = "";
+    buttons.style.transform = "";
+    selectionInfo.style.transform =
+      "translateX(-50%)";
+    selectionBar.style.transform =
+      "translateX(-50%)";
+
+    editPanel.style.transform = "";
+
+    return;
+  }
+
+
+  /*
+    横画面時の論理サイズ
+  */
+
+  const LW = logicalWidth();
+  const LH = logicalHeight();
+
+
+  /*
+    dateBox
+
+    元コード：
+      左上
+
+    → −90°後：
+      左下
+  */
+
+  placeRotatedElement(
+    dateBox,
+    10 + dateBox.offsetWidth / 2,
+    10 + dateBox.offsetHeight / 2
+  );
+
+
+  /*
+    buttons
+
+    元コード：
+      右上
+
+    → −90°後：
+      左上
+  */
+
+  placeRotatedElement(
+    buttons,
+    LW - 10 - buttons.offsetWidth / 2,
+    10 + buttons.offsetHeight / 2
+  );
+
+
+  /*
+    選択情報
+
+    元コード：
+      画面下部中央
+
+    → −90°後：
+      画面右側中央
+  */
+
+  placeRotatedElement(
+    selectionInfo,
+    LW / 2,
+    LH - 58 - selectionInfo.offsetHeight / 2
+  );
+
+
+  /*
+    選択バー
+
+    元コード：
+      画面下部中央
+
+    → −90°後：
+      画面右側中央寄り
+  */
+
+  placeRotatedElement(
+    selectionBar,
+    LW / 2,
+    LH - 10 - selectionBar.offsetHeight / 2
+  );
+
+
+  /*
+    編集パネル
+
+    中央に配置したまま
+    −90°回転。
+  */
+
+  if (
+    editModal.style.display === "flex"
+  ) {
+
+    placeRotatedElement(
+      editPanel,
+      LW / 2,
+      LH / 2
+    );
+  }
 }
 
 
@@ -1190,7 +1458,11 @@ function draw() {
 function findShot(screenX, screenY) {
 
   /*
-    新しい矢を優先
+    screenX / screenY は
+    実画面座標。
+
+    worldToScreenも同じ実画面座標なので
+    そのまま距離判定できる。
   */
 
   for (
@@ -1339,6 +1611,8 @@ function openEditShot(shot) {
   editModal.style.display =
     "flex";
 
+  layoutRotatedUI();
+
   setTimeout(() => {
 
     editComment.focus();
@@ -1357,6 +1631,8 @@ function closeEditModal() {
 
   editModal.style.display =
     "none";
+
+  layoutRotatedUI();
 }
 
 
@@ -1612,19 +1888,7 @@ canvas.addEventListener(
 
 
     /*
-      実画面座標を
-      回転前のキャンバス座標へ変換
-    */
-
-    const point =
-      getCanvasPoint(
-        e.clientX,
-        e.clientY
-      );
-
-
-    /*
-      2本目以降のタッチ入力
+      2本目以降のタッチ入力。
     */
 
     if (
@@ -1662,10 +1926,10 @@ canvas.addEventListener(
 
 
     pointerStartX =
-      point.x;
+      e.clientX;
 
     pointerStartY =
-      point.y;
+      e.clientY;
 
     moved = false;
 
@@ -1678,8 +1942,8 @@ canvas.addEventListener(
 
       const candidates =
         findOverlappingShots(
-          point.x,
-          point.y
+          e.clientX,
+          e.clientY
         );
 
 
@@ -1694,11 +1958,11 @@ canvas.addEventListener(
       const samePosition =
         lastSelectionX !== null &&
         Math.abs(
-          point.x -
+          e.clientX -
           lastSelectionX
         ) < 16 &&
         Math.abs(
-          point.y -
+          e.clientY -
           lastSelectionY
         ) < 16;
 
@@ -1747,10 +2011,10 @@ canvas.addEventListener(
 
 
       lastSelectionX =
-        point.x;
+        e.clientX;
 
       lastSelectionY =
-        point.y;
+        e.clientY;
 
 
       draw();
@@ -1765,8 +2029,8 @@ canvas.addEventListener(
 
     const shot =
       findShot(
-        point.x,
-        point.y
+        e.clientX,
+        e.clientY
       );
 
 
@@ -1787,10 +2051,10 @@ canvas.addEventListener(
 
 
       dragOffsetX =
-        p.x - point.x;
+        p.x - e.clientX;
 
       dragOffsetY =
-        p.y - point.y;
+        p.y - e.clientY;
 
 
       /*
@@ -1839,14 +2103,9 @@ canvas.addEventListener(
             }
 
 
-            /*
-              1回のタップなら
-              同じ場所に新しい矢を追加
-            */
-
             addShot(
-              point.x,
-              point.y
+              e.clientX,
+              e.clientY
             );
 
             lastTapShot =
@@ -1868,8 +2127,8 @@ canvas.addEventListener(
     */
 
     addShot(
-      point.x,
-      point.y
+      e.clientX,
+      e.clientY
     );
 
   },
@@ -1900,19 +2159,12 @@ canvas.addEventListener(
     }
 
 
-    const point =
-      getCanvasPoint(
-        e.clientX,
-        e.clientY
-      );
-
-
     const dx =
-      point.x -
+      e.clientX -
       pointerStartX;
 
     const dy =
-      point.y -
+      e.clientY -
       pointerStartY;
 
 
@@ -1924,11 +2176,6 @@ canvas.addEventListener(
       moved = true;
     }
 
-
-    /*
-      ドラッグしたら
-      タップ処理をキャンセル
-    */
 
     if (moved) {
 
@@ -1944,10 +2191,10 @@ canvas.addEventListener(
 
     const p =
       screenToWorld(
-        point.x +
+        e.clientX +
           dragOffsetX,
 
-        point.y +
+        e.clientY +
           dragOffsetY
       );
 
@@ -2108,13 +2355,6 @@ function getTouchDistance(e) {
   const b =
     e.touches[1];
 
-
-  /*
-    touch座標も
-    画面上の距離そのものなので、
-    2点間距離の計算は
-    回転変換不要。
-  */
 
   const dx =
     a.clientX -
