@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 
 <title>弓道 矢所記録</title>
 
@@ -90,36 +90,6 @@
     z-index: 10;
     display: none;
     gap: 6px;
-  }
-
-  @media (orientation: portrait) {
-    #dateBox {
-      top: auto;
-      left: 10px;
-      bottom: 10px;
-      transform: rotate(-90deg);
-      transform-origin: bottom left;
-    }
-
-    #buttons {
-      top: auto;
-      right: 10px;
-      bottom: 10px;
-      transform: rotate(-90deg);
-      transform-origin: bottom right;
-    }
-
-    #selectionInfo {
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%) rotate(-90deg);
-    }
-
-    #selectionBar {
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%) rotate(-90deg);
-    }
   }
 
 
@@ -582,8 +552,14 @@ function resize() {
 
 function baseScale() {
 
-  return logicalWidth() /
-    (TARGET_SPACING * 2);
+  /*
+    ここは元コードから変更なし。
+
+    横画面時の左右の的の中心が
+    左右端に来る倍率を維持する。
+  */
+
+  return W / (TARGET_SPACING * 2);
 }
 
 
@@ -591,86 +567,34 @@ function baseScale() {
    座標変換
 ========================= */
 
-function isLockedPortrait() {
-  return W < H;
-}
-
-
-function logicalWidth() {
-  return isLockedPortrait() ? H : W;
-}
-
-
-function logicalHeight() {
-  return isLockedPortrait() ? W : H;
-}
-
-
-function logicalToPhysical(x, y) {
-
-  if (!isLockedPortrait()) {
-    return { x, y };
-  }
-
-  return {
-    x: y,
-    y: H - x
-  };
-}
-
-
-function physicalToLogical(x, y) {
-
-  if (!isLockedPortrait()) {
-    return { x, y };
-  }
-
-  return {
-    x: H - y,
-    y: x
-  };
-}
-
-
 function worldToScreen(x, y) {
-
-  const lw = logicalWidth();
-  const lh = logicalHeight();
-
-  const s =
-    baseScale() * scale;
 
   return {
 
     x:
-      lw / 2 +
-      x * s,
+      W / 2 +
+      x * baseScale() * scale,
 
     y:
-      lh / 2 +
-      (y - centerY) * s
+      H / 2 +
+      (y - centerY) *
+      baseScale() *
+      scale
   };
 }
 
 
 function screenToWorld(x, y) {
 
-  const logical =
-    physicalToLogical(x, y);
-
-  const lw = logicalWidth();
-  const lh = logicalHeight();
-
-  const s =
-    baseScale() * scale;
-
   return {
 
     x:
-      (logical.x - lw / 2) / s,
+      (x - W / 2) /
+      (baseScale() * scale),
 
     y:
-      (logical.y - lh / 2) / s +
+      (y - H / 2) /
+      (baseScale() * scale) +
       centerY
   };
 }
@@ -688,11 +612,11 @@ function drawKasumi(cx, cy) {
   const center = {
 
     x:
-      logicalWidth() / 2 +
+      W / 2 +
       cx * s,
 
     y:
-      logicalHeight() / 2 +
+      H / 2 +
       (cy - centerY) * s
   };
 
@@ -857,22 +781,6 @@ function draw() {
     H
   );
 
-  ctx.save();
-
-  /*
-    回転ロック中のスマホでは、
-    論理的な横画面をキャンバス上で-90度回転して描く。
-    PCや通常の横viewportでは元の座標系のまま。
-  */
-
-  if (isLockedPortrait()) {
-    ctx.translate(0, H);
-    ctx.rotate(-Math.PI / 2);
-  }
-
-  const drawW = logicalWidth();
-  const drawH = logicalHeight();
-
 
   /*
     全体を安土色
@@ -883,8 +791,8 @@ function draw() {
   ctx.fillRect(
     0,
     0,
-    drawW,
-    drawH
+    W,
+    H
   );
 
 
@@ -903,7 +811,7 @@ function draw() {
   ctx.fillRect(
     0,
     0,
-    drawW,
+    W,
     curtain.y
   );
 
@@ -923,8 +831,8 @@ function draw() {
   ctx.fillRect(
     0,
     azuchiTop.y,
-    drawW,
-    drawH - azuchiTop.y
+    W,
+    H - azuchiTop.y
   );
 
 
@@ -949,7 +857,7 @@ function draw() {
   );
 
   ctx.lineTo(
-    drawW,
+    W,
     ground.y
   );
 
@@ -988,7 +896,7 @@ function draw() {
 
     ctx.lineTo(
       p.x,
-      drawH
+      H
     );
 
     ctx.stroke();
@@ -1041,9 +949,7 @@ function draw() {
 
 
     /*
-      矢本体。
-      8割以上重なった場合は
-      getShotColor() で別色になる。
+      矢本体
     */
 
     ctx.beginPath();
@@ -1063,17 +969,8 @@ function draw() {
 
 
     /*
-      番号も-90度回転。
+      番号
     */
-
-    ctx.save();
-
-    ctx.translate(
-      p.x,
-      p.y
-    );
-
-    ctx.rotate(-Math.PI / 2);
 
     ctx.fillStyle = "#ffffff";
 
@@ -1085,11 +982,9 @@ function draw() {
 
     ctx.fillText(
       shot.number,
-      0,
-      0.5
+      p.x,
+      p.y + 0.5
     );
-
-    ctx.restore();
 
 
     /*
@@ -1129,8 +1024,6 @@ function draw() {
     selectionBar.style.display =
       "none";
   }
-
-  ctx.restore();
 }
 
 
@@ -1140,11 +1033,9 @@ function draw() {
 
 function findShot(screenX, screenY) {
 
-  const touch =
-    physicalToLogical(
-      screenX,
-      screenY
-    );
+  /*
+    新しい矢を優先
+  */
 
   for (
     let i = shots.length - 1;
@@ -1159,10 +1050,10 @@ function findShot(screenX, screenY) {
       );
 
     const dx =
-      touch.x - p.x;
+      screenX - p.x;
 
     const dy =
-      touch.y - p.y;
+      screenY - p.y;
 
     const distance =
       Math.sqrt(
@@ -1170,9 +1061,7 @@ function findShot(screenX, screenY) {
         dy * dy
       );
 
-    if (
-      distance <= 16
-    ) {
+    if (distance <= 16) {
 
       return shots[i];
     }
@@ -1191,12 +1080,6 @@ function findOverlappingShots(
   screenY
 ) {
 
-  const touch =
-    physicalToLogical(
-      screenX,
-      screenY
-    );
-
   const result = [];
 
   for (const shot of shots) {
@@ -1208,10 +1091,10 @@ function findOverlappingShots(
       );
 
     const dx =
-      touch.x - p.x;
+      screenX - p.x;
 
     const dy =
-      touch.y - p.y;
+      screenY - p.y;
 
     const distance =
       Math.sqrt(
@@ -1219,9 +1102,7 @@ function findOverlappingShots(
         dy * dy
       );
 
-    if (
-      distance <= 16
-    ) {
+    if (distance <= 16) {
 
       result.push(shot);
     }
@@ -1562,57 +1443,6 @@ let moved = false;
 
 let tapTimer = null;
 let lastTapShot = null;
-let lastTapTime = 0;
-
-const DOUBLE_TAP_TIME = 450;
-
-let activePointers = new Map();
-
-
-function cancelTapTimer() {
-
-  if (tapTimer !== null) {
-
-    clearTimeout(tapTimer);
-
-    tapTimer = null;
-  }
-}
-
-
-function resetTapState() {
-
-  cancelTapTimer();
-
-  lastTapShot = null;
-  lastTapTime = 0;
-}
-
-
-function getPointerDistance() {
-
-  const points =
-    Array.from(
-      activePointers.values()
-    );
-
-  if (points.length < 2) {
-    return null;
-  }
-
-  const dx =
-    points[0].x -
-    points[1].x;
-
-  const dy =
-    points[0].y -
-    points[1].y;
-
-  return Math.sqrt(
-    dx * dx +
-    dy * dy
-  );
-}
 
 
 /* =========================
@@ -1626,48 +1456,44 @@ canvas.addEventListener(
     e.preventDefault();
 
 
-    if (e.pointerType === "touch") {
-
-      activePointers.set(
-        e.pointerId,
-        {
-          x: e.clientX,
-          y: e.clientY
-        }
-      );
-    }
-
-
     /*
-      2本目の指。
-      保留中の矢追加を必ずキャンセル。
+      2本目以降のタッチ入力。
+
+      ピンチズーム開始時には、
+      1本目の指で予約されていた
+      「矢を追加」をキャンセルする。
     */
 
     if (
-      activePointers.size >= 2
+      e.pointerType === "touch" &&
+      e.isPrimary === false
     ) {
 
-      cancelTapTimer();
+      clearTimeout(
+        tapTimer
+      );
+
+      tapTimer = null;
 
       lastTapShot = null;
-      lastTapTime = 0;
 
       draggingShot = null;
-      moved = true;
+
+      moved = false;
 
       isPinching = true;
-
-      pinchStartDistance =
-        getPointerDistance();
-
-      pinchStartScale =
-        scale;
 
       return;
     }
 
 
+    /*
+      すでにピンチ中なら
+      通常操作を受け付けない。
+    */
+
     if (isPinching) {
+
       return;
     }
 
@@ -1781,56 +1607,44 @@ canvas.addEventListener(
       );
 
 
+    /*
+      既存の矢
+    */
+
     if (shot) {
 
       draggingShot = shot;
 
 
-      const logicalPoint =
+      const p =
         worldToScreen(
           shot.x,
           shot.y
         );
 
-      const physicalPoint =
-        logicalToPhysical(
-          logicalPoint.x,
-          logicalPoint.y
-        );
-
-
-      /*
-        ドラッグオフセットは
-        実画面座標で保持する。
-      */
 
       dragOffsetX =
-        physicalPoint.x -
-        e.clientX;
+        p.x - e.clientX;
 
       dragOffsetY =
-        physicalPoint.y -
-        e.clientY;
+        p.y - e.clientY;
 
 
       /*
-        ダブルタップ。
+        ダブルタップ
       */
 
-      const now =
-        Date.now();
-
-
       if (
-        lastTapShot === shot &&
-        now - lastTapTime <=
-          DOUBLE_TAP_TIME
+        lastTapShot === shot
       ) {
 
-        cancelTapTimer();
+        clearTimeout(
+          tapTimer
+        );
+
+        tapTimer = null;
 
         lastTapShot = null;
-        lastTapTime = 0;
 
         draggingShot = null;
 
@@ -1843,57 +1657,46 @@ canvas.addEventListener(
 
 
       /*
-        1回目のタップ。
-        ここではまだ矢を追加しない。
+        1回目のタップ
       */
 
       lastTapShot =
         shot;
-
-      lastTapTime =
-        now;
-
-
-      cancelTapTimer();
-
-
-      const tapX =
-        e.clientX;
-
-      const tapY =
-        e.clientY;
 
 
       tapTimer =
         setTimeout(
           () => {
 
-            tapTimer = null;
+            /*
+              ピンチ中なら追加しない
+            */
 
-
-            if (
-              isPinching ||
-              moved
-            ) {
+            if (isPinching) {
 
               lastTapShot = null;
-              lastTapTime = 0;
 
               return;
             }
 
 
+            /*
+              1回のタップなら
+              同じ場所に新しい矢を追加
+            */
+
             addShot(
-              tapX,
-              tapY
+              e.clientX,
+              e.clientY
             );
 
+            lastTapShot =
+              null;
 
-            lastTapShot = null;
-            lastTapTime = 0;
+            tapTimer = null;
 
           },
-          DOUBLE_TAP_TIME
+          300
         );
 
 
@@ -1902,49 +1705,13 @@ canvas.addEventListener(
 
 
     /*
-      空白タップも即追加しない。
-
-      これで、ズームボタンやピンチ操作の
-      途中で矢が増えるのを防ぐ。
+      空白をタップ
     */
 
-    const tapX =
-      e.clientX;
-
-    const tapY =
-      e.clientY;
-
-
-    cancelTapTimer();
-
-    lastTapShot = null;
-    lastTapTime = 0;
-
-
-    tapTimer =
-      setTimeout(
-        () => {
-
-          tapTimer = null;
-
-
-          if (
-            isPinching ||
-            moved
-          ) {
-
-            return;
-          }
-
-
-          addShot(
-            tapX,
-            tapY
-          );
-
-        },
-        DOUBLE_TAP_TIME
-      );
+    addShot(
+      e.clientX,
+      e.clientY
+    );
 
   },
   {
@@ -1964,74 +1731,17 @@ canvas.addEventListener(
     e.preventDefault();
 
 
-    if (
-      e.pointerType === "touch" &&
-      activePointers.has(e.pointerId)
-    ) {
-
-      activePointers.set(
-        e.pointerId,
-        {
-          x: e.clientX,
-          y: e.clientY
-        }
-      );
-    }
-
-
     /*
-      2本指ならピンチ。
+      ピンチ中は
+      矢を動かさない。
     */
 
-    if (
-      activePointers.size >= 2
-    ) {
-
-      isPinching = true;
-
-      cancelTapTimer();
-
-      lastTapShot = null;
-      lastTapTime = 0;
-
-      draggingShot = null;
-
-      const distance =
-        getPointerDistance();
-
-
-      if (
-        pinchStartDistance !== null &&
-        distance !== null
-      ) {
-
-        scale =
-          pinchStartScale *
-          (
-            distance /
-            pinchStartDistance
-          );
-
-
-        scale =
-          Math.max(
-            MIN_SCALE,
-            Math.min(
-              MAX_SCALE,
-              scale
-            )
-          );
-
-
-        draw();
-      }
-
-
+    if (isPinching) {
       return;
     }
 
 
-    if (isPinching) {
+    if (!draggingShot) {
       return;
     }
 
@@ -2051,16 +1761,23 @@ canvas.addEventListener(
     ) {
 
       moved = true;
-
-      cancelTapTimer();
-
-      lastTapShot = null;
-      lastTapTime = 0;
     }
 
 
-    if (!draggingShot) {
-      return;
+    /*
+      ドラッグしたら
+      タップ処理をキャンセル
+    */
+
+    if (moved) {
+
+      clearTimeout(
+        tapTimer
+      );
+
+      tapTimer = null;
+
+      lastTapShot = null;
     }
 
 
@@ -2073,6 +1790,10 @@ canvas.addEventListener(
           dragOffsetY
       );
 
+
+    /*
+      記録範囲内に制限
+    */
 
     p.x =
       Math.max(
@@ -2120,35 +1841,12 @@ canvas.addEventListener(
     e.preventDefault();
 
 
-    if (
-      e.pointerType === "touch"
-    ) {
-
-      activePointers.delete(
-        e.pointerId
-      );
-    }
-
+    /*
+      ピンチ中に離した指は
+      通常の操作として扱わない。
+    */
 
     if (isPinching) {
-
-      if (
-        activePointers.size < 2
-      ) {
-
-        pinchStartDistance = null;
-
-        isPinching = false;
-
-        draggingShot = null;
-
-        moved = true;
-
-        cancelTapTimer();
-
-        lastTapShot = null;
-        lastTapTime = 0;
-      }
 
       return;
     }
@@ -2163,7 +1861,8 @@ canvas.addEventListener(
     }
 
 
-    draggingShot = null;
+    draggingShot =
+      null;
 
   },
   {
@@ -2178,17 +1877,7 @@ canvas.addEventListener(
 
 canvas.addEventListener(
   "pointercancel",
-  e => {
-
-    if (
-      e.pointerType === "touch"
-    ) {
-
-      activePointers.delete(
-        e.pointerId
-      );
-    }
-
+  () => {
 
     if (
       draggingShot &&
@@ -2199,182 +1888,8 @@ canvas.addEventListener(
     }
 
 
-    draggingShot = null;
-
-    cancelTapTimer();
-
-    lastTapShot = null;
-    lastTapTime = 0;
-
-    pinchStartDistance = null;
-
-    if (
-      activePointers.size < 2
-    ) {
-
-      isPinching = false;
-    }
-  }
-);
-
-
-/* =========================
-   touchによるピンチ検知
-========================= */
-
-canvas.addEventListener(
-  "touchstart",
-  e => {
-
-    if (
-      e.touches.length >= 2
-    ) {
-
-      e.preventDefault();
-
-      cancelTapTimer();
-
-      lastTapShot = null;
-      lastTapTime = 0;
-
-      draggingShot = null;
-
-      moved = true;
-
-      isPinching = true;
-
-      pinchStartDistance =
-        getTouchDistance(e);
-
-      pinchStartScale =
-        scale;
-    }
-
-  },
-  {
-    passive: false
-  }
-);
-
-
-canvas.addEventListener(
-  "touchmove",
-  e => {
-
-    if (
-      e.touches.length < 2
-    ) {
-
-      return;
-    }
-
-
-    e.preventDefault();
-
-
-    isPinching = true;
-
-    cancelTapTimer();
-
-    lastTapShot = null;
-    lastTapTime = 0;
-
-    draggingShot = null;
-
-
-    const distance =
-      getTouchDistance(e);
-
-
-    if (
-      pinchStartDistance === null ||
-      !distance
-    ) {
-
-      return;
-    }
-
-
-    const ratio =
-      distance /
-      pinchStartDistance;
-
-
-    scale =
-      pinchStartScale *
-      ratio;
-
-
-    scale =
-      Math.max(
-        MIN_SCALE,
-        Math.min(
-          MAX_SCALE,
-          scale
-        )
-      );
-
-
-    draw();
-
-  },
-  {
-    passive: false
-  }
-);
-
-
-canvas.addEventListener(
-  "touchend",
-  e => {
-
-    if (
-      e.touches.length < 2
-    ) {
-
-      pinchStartDistance = null;
-
-      if (isPinching) {
-
-        isPinching = false;
-
-        draggingShot = null;
-
-        moved = true;
-
-        cancelTapTimer();
-
-        lastTapShot = null;
-        lastTapTime = 0;
-      }
-    }
-
-  },
-  {
-    passive: false
-  }
-);
-
-
-canvas.addEventListener(
-  "touchcancel",
-  () => {
-
-    pinchStartDistance = null;
-
-    isPinching = false;
-
-    draggingShot = null;
-
-    moved = true;
-
-    cancelTapTimer();
-
-    lastTapShot = null;
-    lastTapTime = 0;
-  },
-  {
-    passive: false
+    draggingShot =
+      null;
   }
 );
 
@@ -2829,5 +2344,3 @@ resize();
 </script>
 
 </body>
-</html>
-```
